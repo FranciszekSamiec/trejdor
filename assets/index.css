@@ -1,0 +1,200 @@
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+
+.g-xtitle, .g-ytitle {
+    display: none;
+}
+
+.g-gtitle {
+    display: none;
+}
+
+.select-input {
+    width: 100%;
+    background-color: black;
+    
+}
+
+.Select-control {
+    width: 100%;
+    background-color: #323738;
+    border: 0.1px solid blue;
+    color: green;
+    font: 1em sans-serif;
+
+}
+
+.dash-dropdown .Select-menu, .Select-menu-outer{
+    /* width: '400px'; */
+    color: white;
+    background-color: #323738;
+    border-top: none;
+    border-right: 0.1px solid blue;
+    border-bottom: 0.1px solid blue;
+    border-left: 0.1px solid blue;
+
+    /* border: 0.1px solid blue; */
+    font: 1em sans-serif;
+    position: relative;
+}
+
+.has-value.Select--single>.Select-control .Select-value .Select-value-label, .has-value.is-pseudo-focused.Select--single>.Select-control .Select-value .Select-value-label {
+    color: white;
+}
+
+.Select-clear-zone {
+    display: none;
+}
+
+.is-open>.Select-control {
+    background: #323738;
+    border-color: blue;
+}
+
+.options {
+    padding: 10px;
+    margin-right: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    background-color: #131722;
+    color: white;
+    font: 1em sans-serif;
+
+}
+
+.options__dates {
+    display: flex;
+    gap: 10px;
+}
+
+.options__position-radio label input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+
+}
+
+.options__position-radio label {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 17px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    font: 1em sans-serif;
+
+}
+
+.options__position-radio label input:checked ~ .checkmark {
+    background-color: blue;
+  }
+  
+  /* Create the indicator (the dot/circle - hidden when not checked) */
+  .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+  
+  /* Show the indicator (dot/circle) when checked */
+  .options__position-radio label input:checked ~ .checkmark:after {
+    display: block;
+  }
+  
+  /* Style the indicator (dot/circle) */
+  .options__position-radio label .checkmark:after {
+    top: 9px;
+    left: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+  }
+  
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #eee;
+    border-radius: 50%;
+}
+
+.options__reset-button {
+    background-color: #2a09ba; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+.options__percent-to-risk {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.options__percent-to-risk-input {
+    width: fit-content;
+}
+
+.DayPickerNavigation_rightButton__horizontalDefault {
+    right: 7px;
+}
+
+.DayPickerNavigation_leftButton__horizontalDefault {
+    left: 7px;
+}
+
+.DayPickerNavigation_button__horizontalDefault {
+    padding: 5px;
+
+}
+
+.CalendarMonth_caption {
+    font-size: 14px;
+
+}
+
+.DateInput_input__focused {
+    background: grey;
+
+}
+
+.DateInput_input {
+    background: #323738;
+    color: white;
+    /* border: 1px solid grey; */
+
+}
+
+.SingleDatePickerInput__withBorder {
+    border: 0.1px solid blue;
+    /* border-radius: 1px; */
+}
+
+
+.options__percent-to-risk-input {
+    background-color: #323738;
+    color: white;
+    border: 0.1px solid blue;
+    border-radius: 2px;
+    cursor: grab;
+    
+}
