@@ -56,7 +56,7 @@ app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
 
-
+print("a dla was ja ni kto")
 
 
 
