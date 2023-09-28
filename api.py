@@ -189,16 +189,11 @@ def updateData(pair, timeframe):
     while True:
         print("beep beep...")
         latest_candle = binance.fetch_ohlcv(pair, timeframe, limit=1)
-        print(latest_candle)
         if latest_candle:
             timestamp = latest_candle[0][0]
             timestamp = pd.to_datetime(timestamp, unit='ms')
             timestamp = timestamp.tz_localize(pytz.UTC).tz_convert(target_timezone)
             timestamp = pd.to_datetime(timestamp).tz_localize(None)        
-
-            print(timestamp)
-            if timestamp == latest_timestamp:
-                print("cipeczka")
 
 
             if timestamp != latest_timestamp:
