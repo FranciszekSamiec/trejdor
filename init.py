@@ -55,6 +55,12 @@ def get_year_month_from_filename(filename):
     else:
         return (0, 0)  # Return a default value for files with incorrect names
 
+def makeDataFrame(path, dateBeginM, dateBeginY, dateEndM, dateEndY):
+    colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
+    
+
+
+
 
 def makeDataFrame(path, dateBeginM, dateBeginY, dateEndM, dateEndY): 
 
