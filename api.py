@@ -2,7 +2,7 @@ from libraries import *
 
 
 
-
+###asqwads
 
 binance = ccxt.binance({
     'rateLimit': 1200,  # Adjust the rate limit as needed
