@@ -38,6 +38,7 @@ prevRadio = 'long position'
 lastRelDataOfZoom = {}
 count = 0 # needed to cause change to dummy so as to trigger callback: displayclickdata
 
+# right now app not timezone aware
 timezone = pytz.timezone("Europe/Warsaw")
 # says how many candles to load (from the current date) at the
 # beginning of the app 
@@ -51,6 +52,9 @@ endM = currentDate.month
 endY = currentDate.year
 
 startDate = "2023-01-01 00:00:00"
+
+# default timeframe 1h
+timeframe = '1h'    
 
 app = dash.Dash(__name__)
 

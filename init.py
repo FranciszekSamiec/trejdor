@@ -175,32 +175,33 @@ def addVertialLoaders(fig, data):
             y=[0,1000000],
             mode='lines',
             name='Vertical Line',
-            line=dict(dash= 'dash',color='green', width=1), 
+            line=dict(dash= 'dash',color='blue', width=1), 
             showlegend=False
         ))
         
-        # fig.add_annotation(
-        #     go.layout.Annotation(
-        #         text="up to date",
-        #         textangle=90, 
-        #         x=vertical_line_date_next,
-        #         y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
-        #         xref="x",
-        #         yref="y",
-        #         showarrow=False,
-        #         arrowhead=0,
-        #         bgcolor="green",
-        #         bordercolor="green",
-        #         borderwidth=2,
-        #         font=dict(size=12, color="white"),
-        #         align="center",
-        #         # captureevents=True,
-        #         # hovertext="Double-lick to load another month",
-        #         width=90,
-        #         height=15,
-        #         opacity=0.8,
-        #     )
-        # )
+        fig.add_annotation(
+            go.layout.Annotation(
+                text="<",
+                # textangle=90, 
+                x=vertical_line_date_next,
+                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+                y = 0.5,
+                xref="x",
+                yref="paper",
+                showarrow=False,
+                arrowhead=0,
+                bgcolor="blue",
+                bordercolor="blue",
+                borderwidth=2,
+                font=dict(size=12, color="white"),
+                align="center",
+                # captureevents=True,
+                # hovertext="Double-lick to load another month",
+                width=25,
+                height=20,
+                opacity=0.8,
+            )
+        )
     else:
 
         fig.add_trace(go.Scatter(
@@ -216,9 +217,10 @@ def addVertialLoaders(fig, data):
             go.layout.Annotation(
                 text=">",
                 x=vertical_line_date_next,
-                y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+                y = 0.5,
                 xref="x",
-                yref="y",
+                yref="paper",
                 showarrow=False,
                 arrowhead=0,
                 bgcolor="blue",
@@ -239,9 +241,10 @@ def addVertialLoaders(fig, data):
             go.layout.Annotation(
                 text="<",
                 x=vertical_line_date_next,
-                y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+                y = 0.5,
                 xref="x",
-                yref="y",
+                yref="paper",
                 showarrow=False,
                 arrowhead=0,
                 bgcolor="blue",
@@ -279,9 +282,10 @@ def addVertialLoaders(fig, data):
         go.layout.Annotation(
             text="<",
             x=vertical_line_date_prev,
-            y=(data.iloc[0]['Low'] + data.iloc[0]['High']) / 2,
+            # y=(data.iloc[0]['Low'] + data.iloc[0]['High']) / 2,
+            y = 0.5,
             xref="x",
-            yref="y",
+            yref="paper",
             showarrow=False,
             arrowhead=0,
             bgcolor="blue",
@@ -302,9 +306,10 @@ def addVertialLoaders(fig, data):
         go.layout.Annotation(
             text=">",
             x=vertical_line_date_prev,
-            y=((data.iloc[0]['Low'] + data.iloc[0]['High']) / 2),
+            # y=((data.iloc[0]['Low'] + data.iloc[0]['High']) / 2),
+            y = 0.5,
             xref="x",
-            yref="y",
+            yref="paper",
             showarrow=False,
             arrowhead=0,
             bgcolor="blue",
@@ -314,18 +319,93 @@ def addVertialLoaders(fig, data):
             align="center",
             textangle=0,
             # captureevents=True,
-            hovertext="Double-lick to load another month",
+            # hovertext="enter number of candles to load",
             width=25,
             height=20,
             opacity=0.8,
-            yshift=30
+            yshift=30,
         )
     )
+    
+    # text_length = len(annotation_text)
+    # width_multiplier = 8  # Adjust this value based on your needs
+    # width = text_length * width_multiplier
+    # print(min(fig['layout']['yaxis']))
+    fig.add_annotation(
+        go.layout.Annotation(
+            text="100",
+            x=vertical_line_date_prev,
+            y = 0,
+            xref="x",
+            yref="paper", 
+            showarrow=False,
+            arrowhead=0,
+            bgcolor="#323738",
+            bordercolor="blue",
+            borderwidth=1,
+            font=dict(size=12, color="white"),
+            align="center",
+            textangle=0,
+            # captureevents=True,
+            hovertext="enter number of candles to load",
+            width=35,
+            height=30,
+            opacity=1,
+            # yshift=-35,
+        )
+    )
+ 
     
 
     yaxis_range = [yMin, yMax]  # Set the desired range
     fig.update_layout(yaxis=dict(range=yaxis_range))
 
+def addCurrentPriceLine(fig, data):
+    # last_candle = data[-1]
+    last_candle = data.iloc[-1]['Close'] > data.iloc[-1]['Open']
+
+    line_color = 'green' if last_candle else 'salmon'
+
+    fig.add_shape(
+        go.layout.Shape(
+            type="line",
+            xref="paper", 
+            # x0=data.iloc[0]['Date'],
+            x0 = 0,
+            # x1=data.iloc[-1]['Date'], 
+            x1 = 1,
+            y0=data.iloc[-1]['Close'],  # Specify the horizontal line's y-coordinate
+            y1=data.iloc[-1]['Close'],  # Specify the horizontal line's y-coordinate
+            line=dict(color=line_color, width=0.8, dash='dot'),  # Line color, width, and style
+        )
+    )
+    text_length = len(str(data.iloc[-1]['Close']))
+    width_multiplier = 7  # Adjust this value based on your needs
+    width = text_length * width_multiplier
+    fig.add_annotation(
+        go.layout.Annotation(
+            text= data.iloc[-1]['Close'],# + data.iloc[-1]['Date'],
+            # textangle=90, 
+            xref = "paper",
+            x=1.04,
+            # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+            y = data.iloc[-1]['Close'],
+            yref="y",
+            showarrow=False,
+            arrowhead=0,
+            bgcolor=line_color,
+            bordercolor=line_color,
+            borderwidth=2,
+            font=dict(size=12, color="white"),
+            align="center",
+            # captureevents=True,
+            # hovertext="Double-lick to load another month",
+            width=width,
+            height=25,
+            opacity=1,
+        )
+    )
+    
 
 def initCandlestickChart(data):
 
@@ -360,7 +440,8 @@ def initCandlestickChart(data):
 
 
     addVertialLoaders(fig, data)
- 
+    addCurrentPriceLine(fig, data)
+
     fig.update_xaxes(
         showspikes=True,
         spikecolor="grey",
