@@ -1,8 +1,28 @@
 from libraries import * 
 
 
+global app_data
+app_data = {
+    'symbols': ['BTCBUSD', 'BTCDOWNUSDT', 'ETHUSDT', 'ETHDOWNUSDT'],  # Replace with your list of symbols
+    'timeframes': ['1m', '1h', '1d' ,'1w'],  # Replace with your list of timeframes
+}
 
-###asqwads
+candlesToLoad = {
+    '1m': 26280,
+    '1h': 8760,
+    '1d': 365,
+    '1w': 52,
+}
+
+# used to translat symbol for valid format on binance
+# later maybe used for other exchanges
+symbolTranslation = {
+    'BTCBUSD': 'BTC/USDT',
+    'ETHUSDT': 'ETH/USDT',
+    'ETHDOWNUSDT': 'ETHDOWN/USDT',
+    'BTCDOWNUSDT': 'BTCDOWN/USDT',
+}
+
 
 binance = ccxt.binance({
     'rateLimit': 1200,  # Adjust the rate limit as needed
@@ -33,11 +53,9 @@ def download_historical_data(startDate, symbol, timeframe):
 
     # start_date = start_date - timedelta(hours=1)
     
-    print(start_date)
     start_date = start_date.astimezone(pytz.UTC)
     start_date = start_date.astimezone(pytz.UTC).replace(tzinfo=None)
 
-    print(start_date)
 
 
     # start_date = pd.to_datetime(startDate)
@@ -48,9 +66,8 @@ def download_historical_data(startDate, symbol, timeframe):
         since = int(start_date.timestamp() * 1000)
         until = int(end_date.timestamp() * 1000)
     
-
-        candles = binance.fetch_ohlcv(symbol, timeframe, since=since, limit=1000)
-        print(candles)
+        symbolBinance = symbolTranslation.get(symbol)
+        candles = binance.fetch_ohlcv(symbolBinance, timeframe, since=since, limit=1000)
 
         if candles:
             df = pd.DataFrame(candles, columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
@@ -76,7 +93,7 @@ def download_historical_data(startDate, symbol, timeframe):
     # print(type(all_data.iloc[0]['Date']))
  
     output_folder = './months/' + symbol + '/'
-    csv_file = f'{output_folder}BTCBUSD-{timeframe}.csv'
+    csv_file = f'{output_folder}/{symbol}-{timeframe}.csv'
     if not os.path.exists(csv_file):
         all_data.to_csv(csv_file, index=False)
     else:
@@ -97,12 +114,10 @@ def checkIfUpToDate(pair, timeframe):
         emptyDf.to_csv(filePath, index=False)
 
     pairDf = pd.read_csv(filePath)
-    print(len(pairDf))
+
     if not len(pairDf) == 0:
-        print("kurwa")
 
         lastOfPair = pairDf.iloc[-1]['Date']
-        print("kurwa")
 
         lastOfPair = pd.to_datetime(lastOfPair)
     else:
@@ -117,17 +132,19 @@ def checkIfUpToDate(pair, timeframe):
     elif timeframe == '1d':
         return now.day == lastOfPair.day
     elif timeframe == '1w':
-        return now.week == lastOfPair.week
-    elif timeframe == '1M':
-        return now.month == lastOfPair.month
+        # Get year and week number for current datetime
+        current_year, current_week, _ = now.isocalendar()
+        # Get year and week number for the lastOfPair datetime
+        last_year, last_week, _ = lastOfPair.isocalendar()
+
+        return current_week == last_week
     else:
-        print("Wrong timeframe")
         return False
     
+# if 
 def returnLastDate(pair, timeframe):
     global ultimateBeginDate
 
-    candlesToLoad = 26000
     # Get the current time
     current_time = datetime.now()
 
@@ -137,15 +154,16 @@ def returnLastDate(pair, timeframe):
         '1h': timedelta(hours=1),
         '1d': timedelta(days=1),
         '1w': timedelta(weeks=1),
-        '1M': timedelta(days=30)  # Approximation for a month
     }
 
     timeframe_delta = timeframe_to_timedelta.get(timeframe)
 
-    time_to_go_back = candlesToLoad * timeframe_delta
+
+    numOfCandles = candlesToLoad.get(timeframe)
+
+    time_to_go_back = numOfCandles * timeframe_delta
     target_date = current_time - time_to_go_back
     target_date_str = target_date.strftime('%Y-%m-%d %H:%M:%S')
-
 
 
     pairDf = pd.read_csv('./months/' + pair + '/' + pair + '-' + timeframe + '.csv')
@@ -180,15 +198,15 @@ def updateData(pair, timeframe):
     pairDf = pd.read_csv('./months/' + pair + '/' + pair + '-' + timeframe + '.csv')
     lastOfPair = pairDf.iloc[-1]['Date']
     lastOfPair = pd.to_datetime(lastOfPair)
-
     # lastOfPair = pd.to_datetime(lastOfPair, unit='ms', origin='unix', utc=True)
     latest_timestamp = lastOfPair # Initialize the latest timestamp as None
-    print("****")
-    print(latest_timestamp)
 
     while True:
-        print("beep beep...")
-        latest_candle = binance.fetch_ohlcv(pair, timeframe, limit=1)
+        print("...")
+        # translation to binance format, cannot be asigned to the same variable 
+        # because it is later reused so it hs to be unchanged
+        pairBinance = symbolTranslation.get(pair)
+        latest_candle = binance.fetch_ohlcv(pairBinance, timeframe, limit=1)
         if latest_candle:
             timestamp = latest_candle[0][0]
             timestamp = pd.to_datetime(timestamp, unit='ms')
@@ -208,15 +226,104 @@ def updateData(pair, timeframe):
                 output_folder = './months/' + pair + '/'
                 csv_file = f'{output_folder}BTCBUSD-{timeframe}.csv'
 
-                df.to_csv(csv_file, mode='a', header=False, index=False)
+                # df.to_csv(csv_file, mode='a', header=False, index=False)
 
         time.sleep(1)  # 1 second
 
-# download_historical_data("2023-01-01 00:00:00", "BTCBUSD", "1h")
+def findDateNCandlesBeforeDate(timeframe, date, candlesToLoad):
+
+    timeframe_to_timedelta = {
+        '1m': timedelta(minutes=1),
+        '1h': timedelta(hours=1),
+        '1d': timedelta(days=1),
+        '1w': timedelta(weeks=1),
+    }
+
+    timeframe_delta = timeframe_to_timedelta.get(timeframe)
+    
+    timeToLoad = candlesToLoad * timeframe_delta
+    target_date = pd.to_datetime(date, format='%Y-%m-%d %H:%M:%S') - timeToLoad
+    target_date = target_date.strftime('%Y-%m-%d %H:%M:%S')
+
+    return target_date
 
 
-handleDataLoading('BTCBUSD', '1m')
 
-# download_historical_data("2023-09-26 00:00:00", "BTCBUSD", "1m")
+# def create_data_folders_and_files(app_data, root_folder='./months'):
+#     symbols = app_data['symbols']
+#     timeframes = app_data['timeframes']
 
-# update_one_minute_data()
+#     # Create the root folder if it doesn't exist
+#     os.makedirs(root_folder, exist_ok=True)
+
+#     # Create subfolders for each symbol
+#     for symbol in symbols:
+#         symbol_folder = os.path.join(root_folder, symbol)
+#         os.makedirs(symbol_folder, exist_ok=True)
+
+#         # Create files for each timeframe inside the symbol folder
+#         for timeframe in timeframes:
+#             filename = f'{symbol}-{timeframe}.csv'
+#             file_path = os.path.join(symbol_folder, filename)
+
+#             # Create an empty CSV file if it doesn't exist
+#             if not os.path.exists(file_path):
+#                 with open(file_path, 'w'):
+#                     pass
+
+
+def create_data_folders_and_files(app_data, root_folder='./months'):
+    symbols = app_data['symbols']
+    timeframes = app_data['timeframes']
+
+    # Create the root folder if it doesn't exist
+    os.makedirs(root_folder, exist_ok=True)
+
+
+
+    # Create subfolders for each symbol
+    for symbol in symbols:
+        symbol_folder = os.path.join(root_folder, symbol)
+        os.makedirs(symbol_folder, exist_ok=True)
+
+        # Create files for each timeframe inside the symbol folder
+        for timeframe in timeframes:
+            # print(symbol, timeframe)
+
+            filename = f'{symbol}-{timeframe}.csv'
+            file_path = os.path.join(symbol_folder, filename)
+            print(file_path)
+            # Create an empty CSV file with column names if it doesn't exist
+            
+            df = pd.DataFrame(columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+            df.to_csv(file_path, index=False)
+
+# function to load data for all pairs and timeframes
+def handleLoadingOfAllPairsAndTimeframes(app_data):
+    symbols = app_data['symbols']
+    timeframes = app_data['timeframes']
+
+    # Create and start a thread for each pair and timeframe
+    threads = []
+    for symbol in symbols:
+        for timeframe in timeframes:
+            print(symbol, " || " ,timeframe)
+            thread = threading.Thread(target=handleDataLoading, args=(symbol, timeframe))
+            # thread.setDaemon(True)
+            threads.append(thread)
+            thread.start()
+
+
+# exchange = ccxt.binance()
+
+
+# # Fetch the list of trading pairs (symbols)
+# all_pairs = exchange.load_markets()
+
+# # Extract the trading pairs from the loaded markets
+# available_pairs = list(all_pairs.keys())
+
+# # Print the available trading pairs
+# for pair in available_pairs:
+#     print(pair)
+

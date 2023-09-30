@@ -43,8 +43,9 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                 html.Div([
                     html.Div(
                         id='error',
-                        style={'color':'orange'},
-                        children=info,
+                        style={'color':'#42c8f5'},
+                        children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML(info),
+                        # children=info,
                     ),
                     # html.Div(id='error', style={'color':'green'}, children="Default Text"),
                     html.Div(

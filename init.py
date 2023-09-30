@@ -10,8 +10,9 @@ from indicators import addVolume
 
 
 frequency_options = {
-    '1h': '1h',
     '1m': '1min',
+    '1h': '1h',
+    '1d': '1D',
     '1w': '1W',
 }
 # list of available pairs - used only in app layout
@@ -22,8 +23,9 @@ options = [
     'ETHDOWNUSDT',
 ]
 
-# Set the default selected option to "ETHUSDT"
+# Set the default timeframe and pair
 selected_option = 'BTCBUSD'
+selected_frequency = '1h'
 
 #  color theme for both charts (candlestick and equity curve)
 custom_theme = {
@@ -55,115 +57,137 @@ def get_year_month_from_filename(filename):
     else:
         return (0, 0)  # Return a default value for files with incorrect names
 
-def makeDataFrame(path, dateBeginM, dateBeginY, dateEndM, dateEndY):
+def makeDataFrame(symbol, timeframe, beginDate, endDate):
     colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
     
-
-
-
-
-def makeDataFrame(path, dateBeginM, dateBeginY, dateEndM, dateEndY): 
-
-    colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
-
-    file_list = glob.glob(path + "/*.csv")
-    excel_list = []
-
-    if len(file_list) == 0:
-        print("No data available for this pair")
-        return pd.DataFrame()
-
-    sorted_files_by_year_month = sorted(file_list, key=lambda x: re.search(r'-(\d{4})-(\d{2})\.csv$', x).groups())
-
-    begin_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[0])
-    end_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[-1])
-
-
-
-    begin_date_match = begin_date_match.group(1)
-    end_date_match = end_date_match.group(1)
-    print("cpicpia")
-
-    file_list = sorted_files_by_year_month
-
-
-    zeroBegin = ""
-    zeroEnd = ""
-    if len(str(dateBeginM)) == 1:
-        zeroBegin = "0"
-
-    if len(str(dateEndM)) == 1:
-        zeroEnd = "0"
-
-    begin = str(dateBeginY) + "-" + zeroBegin + str(dateBeginM) + ".csv"
-    end = str(dateEndY) + "-" + zeroEnd + str(dateEndM) + ".csv"
-
-    if begin > end:
-        warning = "enter corect data"
-        return warning
-
-    print("begin: " + begin)
-    print("end: " + end)
-
-
-    print(begin_date_match)
-    print(end_date_match)
-    if begin < begin_date_match or end > end_date_match:
-        warning = "No data available for this period. Available data from " + begin_date_match + " to " + end_date_match + "."
-        return warning
+    output_folder = './months/' + symbol + '/'
+    csv_file = f'{output_folder}{symbol}-{timeframe}.csv'
+    # Read the entire CSV file into a DataFrame
+    df = pd.read_csv(csv_file, names=colnames, header=0)
     
-    else:
-        whetherToAppend = False
+    # Convert the 'Date' column to datetime objects
+    df['Date'] = pd.to_datetime(df['Date'])
+    
+    # Filter the DataFrame based on the specified date range
+    mask = (df['Date'] >= beginDate) & (df['Date'] <= endDate)
+    filtered_df = df.loc[mask]
+    
+    return filtered_df
 
-        for file in file_list:
+
+
+# def makeDataFrame(path, dateBeginM, dateBeginY, dateEndM, dateEndY): 
+
+#     colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
+
+#     file_list = glob.glob(path + "/*.csv")
+#     excel_list = []
+
+#     if len(file_list) == 0:
+#         print("No data available for this pair")
+#         return pd.DataFrame()
+
+#     sorted_files_by_year_month = sorted(file_list, key=lambda x: re.search(r'-(\d{4})-(\d{2})\.csv$', x).groups())
+
+#     begin_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[0])
+#     end_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[-1])
+
+
+
+#     begin_date_match = begin_date_match.group(1)
+#     end_date_match = end_date_match.group(1)
+#     print("cpicpia")
+
+#     file_list = sorted_files_by_year_month
+
+
+#     zeroBegin = ""
+#     zeroEnd = ""
+#     if len(str(dateBeginM)) == 1:
+#         zeroBegin = "0"
+
+#     if len(str(dateEndM)) == 1:
+#         zeroEnd = "0"
+
+#     begin = str(dateBeginY) + "-" + zeroBegin + str(dateBeginM) + ".csv"
+#     end = str(dateEndY) + "-" + zeroEnd + str(dateEndM) + ".csv"
+
+#     if begin > end:
+#         warning = "enter corect data"
+#         return warning
+
+#     print("begin: " + begin)
+#     print("end: " + end)
+
+
+#     print(begin_date_match)
+#     print(end_date_match)
+#     if begin < begin_date_match or end > end_date_match:
+#         warning = "No data available for this period. Available data from " + begin_date_match + " to " + end_date_match + "."
+#         return warning
+    
+#     else:
+#         whetherToAppend = False
+
+#         for file in file_list:
             
-            if file.endswith(begin):
-                whetherToAppend = True
+#             if file.endswith(begin):
+#                 whetherToAppend = True
             
-            if whetherToAppend:
+#             if whetherToAppend:
 
-                excel_list.append(pd.read_csv(file, header = None))
+#                 excel_list.append(pd.read_csv(file, header = None))
 
-            if whetherToAppend == True and file.endswith(end):
-                whetherToAppend = False
+#             if whetherToAppend == True and file.endswith(end):
+#                 whetherToAppend = False
         
 
-    df = pd.concat(excel_list)
-    df.columns = colnames
-    df = df.drop(0).reset_index(drop=True)
+#     df = pd.concat(excel_list)
+#     df.columns = colnames
+#     df = df.drop(0).reset_index(drop=True)
 
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d %H:%M:%S')
-    for column in df.iloc[:, 1:]:
-        df[column] = df[column].astype(float)
+#     df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d %H:%M:%S')
+#     for column in df.iloc[:, 1:]:
+#         df[column] = df[column].astype(float)
 
-    print(type(df.iloc[0]['Date']))
+#     print(type(df.iloc[0]['Date']))
 
-    return df
+#     return df
 
-def availableRange(ticker):
-    path = "./months/" + ticker
-    file_list = glob.glob(path + "/*.csv")
+def availableRange(symbol, timeframe):
 
-    if len(file_list) == 0:
-        print("No data available for this pair")
+    colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
+    output_folder = './months/' + symbol + '/'
+    csv_file = f'{output_folder}{symbol}-{timeframe}.csv'
+    # Read the entire CSV file into a DataFrame
+    df = pd.read_csv(csv_file, names=colnames, header=0)
+    # file_list = glob.glob(path + "/*.csv")
+    if len(df) > 0:
+        begin_date_match = df.iloc[0]['Date']
+        end_date_match = df.iloc[-1]['Date']
+    else:
         return "this pair is not available"
+
+    # if len(file_list) == 0:
+    #     print("No data available for this pair")
+    #     return "this pair is not available"
     
-    sorted_files_by_year_month = sorted(file_list, key=lambda x: re.search(r'-(\d{4})-(\d{2})\.csv$', x).groups())
-    begin_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[0])
-    end_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[-1])
+    # sorted_files_by_year_month = sorted(file_list, key=lambda x: re.search(r'-(\d{4})-(\d{2})\.csv$', x).groups())
+    # begin_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[0])
+    # end_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[-1])
 
-    begin_date_match = begin_date_match.group(1)[:-4]
-    end_date_match = end_date_match.group(1)[:-4]
+    # begin_date_match = begin_date_match.group(1)[:-4]
+    # end_date_match = end_date_match.group(1)[:-4]
 
 
-    info = "Available data from " + begin_date_match+ " to " + end_date_match
+    info = "Available data from " + begin_date_match + " <br/> to " + end_date_match
     return info
 
-def loadTicker(ticker, mBegin, yBegin, mEnd, yEnd):
+def loadTicker(symbol, timeframe, dateBegin, dateEnd):
     # load ticker from file
     
-    path = "./months/" + ticker
-    df = makeDataFrame(path, mBegin, yBegin, mEnd, yEnd)
+    # path = "./months/" + ticker
+    df = makeDataFrame(symbol, timeframe, dateBegin, dateEnd)
     
     return df
 

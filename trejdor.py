@@ -3,7 +3,7 @@ from indicators import *
 from init import *
 from layout import createLayout
 from eqChart import *
-# from api import *
+from api import *
 
 #--------------------------------------------- GLOBAL VARIABLES
 listOfPositions = []
@@ -42,29 +42,37 @@ count = 0 # needed to cause change to dummy so as to trigger callback: displaycl
 timezone = pytz.timezone("Europe/Warsaw")
 # says how many candles to load (from the current date) at the
 # beginning of the app 
-defaultLookBackPer = 1488 
-currentDate = datetime.now(timezone).date()
-beginDate = currentDate - timedelta(hours=defaultLookBackPer)
 
-startM = beginDate.month 
-startY = beginDate.year
-endM = currentDate.month
-endY = currentDate.year
 
 startDate = "2023-01-01 00:00:00"
 
-# default timeframe 1h
-timeframe = '1h'    
 
+timeframe = selected_frequency    
+
+# num of candles to load at the beginning of the app
+# but also when new pair is loaded or timeframe is changed
+# ensures optimal range of data for every pair and timeframe
+numOfCandlesToLoad = 2000
+# these two lines make sure that the default date range for 
+# every pair is current date - 2000 candles of whatever timeframe
+# when new pair is loaded or timefram i changed 
+# this will be the range for the new data
+endDate = current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+beginDate = findDateNCandlesBeforeDate(timeframe, endDate, numOfCandlesToLoad)
+print(beginDate)
 app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
 
+create_data_folders_and_files(app_data)
 
+handleLoadingOfAllPairsAndTimeframes(app_data)
 
 
 #-------------------------------------------------------------- INITIALIZATION
-data = makeDataFrame("./months/BTCBUSD", startM, startY, endM, endY)
+# data = makeDataFrame("./months/BTCBUSD", startM, startY, endM, endY)
+
+data = makeDataFrame(selected_option, selected_frequency , beginDate, endDate)
 
 print(type(data.iloc[0]['Date']))
 
@@ -78,7 +86,7 @@ occupiedCandle = [False] * len(data.index)
 # Create the Dash app
 
 
-info = availableRange(selected_option)
+info = availableRange(selected_option, selected_frequency)
 # Define the layout of the app (in the layout.py file)
 app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info)
 #-------------------------------------------------------------- INITIALIZATION
@@ -316,27 +324,61 @@ def changeDateRange(start_date, end_date):
     global equity_values
     global occupiedCandle
     global listOfPositions
-    global startM
-    global startY
-    global endM
-    global endY
+
 
 
     if start_date is None or end_date is None:
         return dash.no_update, ''
     
-    
-    startM = int(start_date[5:7])
-    startY = int(start_date[0:4])
-    endM = int(end_date[5:7])
-    endY = int(end_date[0:4])
-
-    resultOfLoad = loadTicker(selected_option, startM, startY, endM, endY)
-    if isinstance(resultOfLoad, str):
-        return dash.no_update, resultOfLoad
+ 
+    resultOfLoad = loadTicker(selected_option, selected_frequency, start_date, end_date)
+    if resultOfLoad.empty:
+        return dash.no_update, 'range not available'
     else:
         data = resultOfLoad
 
+    print("345134514351353")
+    print(resultOfLoad)
+
+    occupiedCandle = [False] * len(data.index)
+    listOfPositions = []
+
+    fig = initCandlestickChart(data)
+
+    addIndicators(data, fig)
+
+    equity_values = [startCapital]
+    equity_chart_fig = initEquityChart(equity_values)
+
+    return fig, ''
+
+@app.callback(
+    Output('candlestick-chart', 'figure', allow_duplicate=True), 
+    Output('error', 'children', allow_duplicate=True), 
+    Input('frequency-dropdown', 'value'),
+    prevent_initial_call=True
+)
+def changeFrequency(selected_frequency):
+    global data
+    global fig
+    global equity_chart_fig
+    global equity_values
+    global occupiedCandle
+    global listOfPositions
+    # global beginDate
+
+    if selected_frequency is None:
+        return dash.no_update, ''
+
+    beginDate = findDateNCandlesBeforeDate(selected_frequency, endDate, numOfCandlesToLoad)
+    print(beginDate)
+    print(endDate)
+    print(selected_frequency)
+    resultOfLoad = loadTicker(selected_option, selected_frequency, beginDate, endDate)
+    if resultOfLoad.empty:
+        return dash.no_update, 'frequency not available'
+    else:
+        data = resultOfLoad
 
     occupiedCandle = [False] * len(data.index)
     listOfPositions = []
@@ -370,9 +412,9 @@ def changePair(selected_option):
 
     data = data.drop(data.index)
 
-    info = availableRange(selected_option)
+    info = availableRange(selected_option, selected_frequency)
 
-    resultOfLoad = loadTicker(selected_option, startM, startY, endM, endY)
+    resultOfLoad = loadTicker(selected_option, selected_frequency, beginDate, endDate)
     if isinstance(resultOfLoad, str):
         return dash.no_update, dash.no_update, info
     else:
@@ -722,6 +764,8 @@ def getDatesFromRelayoutData(relayout_data):
 
     return datesRes
 
+
+
 # used to capture clicking on vertical loaders
 # here you should also add possibility to change period of skipping 
 @app.callback(
@@ -735,18 +779,26 @@ def loadNewData(relayout_data):
     global fig
     global occupiedCandle
 
+    # dateBegin = datetime.strptime(data.iloc[-1]['Date'], "%Y-%m-%d %H:%M:%S")
 
     dateBegin = data.iloc[-1]['Date']
-    beginM = dateBegin.month + 1
-    if beginM == 13:
-        beginM = 1
-        beginY = dateBegin.year + 1
-    else:
-        beginY = dateBegin.year
+    timeframe_to_timedelta = {
+        '1m': timedelta(minutes=1),
+        '1h': timedelta(hours=1),
+        '1d': timedelta(days=1),
+        '1w': timedelta(weeks=1),
+        '1M': timedelta(days=30)  # Approximation for a month
+    }
 
-    dateEnd = dateBegin + relativedelta(months = 1)
-    endM = dateEnd.month
-    endY = dateEnd.year
+    timeframe_delta = timeframe_to_timedelta.get(timeframe)
+
+    candlesToLoad = 100
+
+    timeToLoad = candlesToLoad * timeframe_delta
+    target_date = dateBegin + timeToLoad
+    dateEnd = target_date.strftime('%Y-%m-%d %H:%M:%S')
+    dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
+
     # print("tuuute")
     # print(beginM)
     # print(endY)
@@ -754,15 +806,12 @@ def loadNewData(relayout_data):
     # print(beginM)
     # print(beginY)
 
-    path = "./months/" + selected_option
-
-
     # print(type(dateBegin))
     if not isClickedAnnotation(relayout_data):
         return dash.no_update
     else:
         # print(data)
-        newData = makeDataFrame(path, beginM, beginY, endM, endY)
+        newData = makeDataFrame(selected_option, selected_frequency, dateBegin, dateEnd)
         # print("\/\/\/\/\/")
         # print(newData)
         # print(" ")
