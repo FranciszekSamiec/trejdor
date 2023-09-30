@@ -70,7 +70,6 @@ def vwap(df):
             cumVol.append(cumVol[x-1] + df.iloc[x, 5])
             cumTypPrice.append(cumTypPrice[x - 1] + typicalPrice[x])
         vwap.append(cumTypPrice[x] / cumVol[x])
-    print(df)
 
     return vwap
 

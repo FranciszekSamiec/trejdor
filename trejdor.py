@@ -5,6 +5,10 @@ from layout import createLayout
 from eqChart import *
 from api import *
 
+# pydatetime deprecated warning, not a problem for now
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 #--------------------------------------------- GLOBAL VARIABLES
 listOfPositions = []
 isAddedPosition = False
@@ -58,15 +62,18 @@ numOfCandlesToLoad = 2000
 # when new pair is loaded or timefram i changed 
 # this will be the range for the new data
 endDate = current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-beginDate = findDateNCandlesBeforeDate(timeframe, endDate, numOfCandlesToLoad)
-print(beginDate)
+beginDate = findDateNCandlesBeforeDate(timeframe, endDate, numOfCandlesToLoad, "<")
+
+print(candlesToLoadwithVerticalLine)
+
+candlesToLoadwithVerticalLine = 1123
+print(candlesToLoadwithVerticalLine)
+printInfo()
 app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
 
-create_data_folders_and_files(app_data)
 
-handleLoadingOfAllPairsAndTimeframes(app_data)
 
 
 #-------------------------------------------------------------- INITIALIZATION
@@ -74,7 +81,6 @@ handleLoadingOfAllPairsAndTimeframes(app_data)
 
 data = makeDataFrame(selected_option, selected_frequency , beginDate, endDate)
 
-print(type(data.iloc[0]['Date']))
 
 occupiedCandle = [False] * len(data.index)
 fig = initCandlestickChart(data)
@@ -337,8 +343,6 @@ def changeDateRange(start_date, end_date):
     else:
         data = resultOfLoad
 
-    print("345134514351353")
-    print(resultOfLoad)
 
     occupiedCandle = [False] * len(data.index)
     listOfPositions = []
@@ -370,10 +374,8 @@ def changeFrequency(selected_frequency):
     if selected_frequency is None:
         return dash.no_update, ''
 
-    beginDate = findDateNCandlesBeforeDate(selected_frequency, endDate, numOfCandlesToLoad)
-    print(beginDate)
-    print(endDate)
-    print(selected_frequency)
+    beginDate = findDateNCandlesBeforeDate(selected_frequency, endDate, numOfCandlesToLoad, "<")
+ 
     resultOfLoad = loadTicker(selected_option, selected_frequency, beginDate, endDate)
     if resultOfLoad.empty:
         return dash.no_update, 'frequency not available'
@@ -764,6 +766,50 @@ def getDatesFromRelayoutData(relayout_data):
 
     return datesRes
 
+# five kinds of annotations:
+# [0] - load new candles right end of chart
+# [1] - hide candles right end of chart
+# [2] - number of candles right end of chart
+# [3] - hide candles left end of chart
+# [4] - load past candles left end of chart
+# [5] - number of candles left end of chart
+def getNumberOfCandlesfromAnnotation(relayout_data):
+    first_key = getFirstKeyOfRelayoutData(relayout_data)
+
+    number = relayout_data[first_key]
+    number = int(number)
+
+    return number 
+
+def whatKindOfAnnotation(relayout_data):
+    # print(relayout_data)
+    first_key = getFirstKeyOfRelayoutData(relayout_data)
+    print(first_key, "<<<<<<<<<")
+    pattern = r'\[(\d+)\]'
+    match = re.search(pattern, first_key)
+    if match:
+        # Extract the matched number from the regex match
+        extracted_number = match.group(1)
+        print(extracted_number)
+        # Convert the extracted number to an integer
+
+        if extracted_number == '0':
+            return "> right"
+        elif extracted_number == '1':
+            return "< right"
+        elif extracted_number == '2':
+            return "num right"
+        elif extracted_number == '3':
+            return "> left"
+        elif extracted_number == '4':
+            return "< left"
+        elif extracted_number == '5':
+            return "num left"
+        else:
+            return "not annotation"
+    else:
+        return "not annotation"
+
 
 
 # used to capture clicking on vertical loaders
@@ -778,61 +824,91 @@ def loadNewData(relayout_data):
     global selected_option
     global fig
     global occupiedCandle
+    global candlesToLoadwithVerticalLine
+    global timeframe
 
-    # dateBegin = datetime.strptime(data.iloc[-1]['Date'], "%Y-%m-%d %H:%M:%S")
 
-    dateBegin = data.iloc[-1]['Date']
-    timeframe_to_timedelta = {
-        '1m': timedelta(minutes=1),
-        '1h': timedelta(hours=1),
-        '1d': timedelta(days=1),
-        '1w': timedelta(weeks=1),
-        '1M': timedelta(days=30)  # Approximation for a month
-    }
-
-    timeframe_delta = timeframe_to_timedelta.get(timeframe)
-
-    candlesToLoad = 100
-
-    timeToLoad = candlesToLoad * timeframe_delta
-    target_date = dateBegin + timeToLoad
-    dateEnd = target_date.strftime('%Y-%m-%d %H:%M:%S')
-    dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
-
-    # print("tuuute")
-    # print(beginM)
-    # print(endY)
-    # print(selected_option)
-    # print(beginM)
-    # print(beginY)
-
-    # print(type(dateBegin))
     if not isClickedAnnotation(relayout_data):
         return dash.no_update
     else:
-        # print(data)
-        newData = makeDataFrame(selected_option, selected_frequency, dateBegin, dateEnd)
-        # print("\/\/\/\/\/")
-        # print(newData)
-        # print(" ")
-        # print(data)
-        # print(" ")
+        kindOfAnnotation = whatKindOfAnnotation(relayout_data)
 
-        occupiedCandle.extend([False] * len(newData)) 
-        # print(data['Volume'])
-        # print(newData['Volume'])
-        # print(newData.columns)
-        data = pd.concat([data,newData])
+
+        if kindOfAnnotation == "> right":
+            dateBegin = data.iloc[-1]['Date']
+
+            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, candlesToLoadwithVerticalLine, ">")
+            dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
+
+            newData = makeDataFrame(selected_option, selected_frequency, dateBegin, dateEnd)
+            data = pd.concat([data,newData])
+            occupiedCandle.extend([False] * len(newData)) 
+
+        elif kindOfAnnotation == "< right":
+            dateBegin = data.iloc[-1]['Date']
+            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, candlesToLoadwithVerticalLine, "<")
+            dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
+
+            print(dateEnd, " ", dateBegin)
+
+
+            if dateEnd < data.iloc[0]['Date'].strftime('%Y-%m-%d %H:%M:%S'):
+                print("hided to too far")
+                return dash.no_update
+            # end and begin switched places because we want to hide candles
+            mask = (data['Date'] > dateBegin) | (data['Date'] < dateEnd)
+            newLen = len(data) - len(data[mask])
+            data = data[mask]
+            print(data)
+
+            occupiedCandle = occupiedCandle[:-newLen]
+            # newData = makeDataFrame(selected_option, selected_frequency, dateEnd, dateBegin)
+        elif kindOfAnnotation == "num right":
+            print(candlesToLoadwithVerticalLine)
+            print(getNumberOfCandlesfromAnnotation(relayout_data))
+            candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
+            print(candlesToLoadwithVerticalLine)
+
+        elif kindOfAnnotation == "< left":
+            print("good")
+
+            dateEnd = data.iloc[0]['Date']
+            dateBegin = findDateNCandlesBeforeDate(timeframe, dateEnd, candlesToLoadwithVerticalLine, "<")
+            dateEnd = dateEnd.strftime('%Y-%m-%d %H:%M:%S')
+
+   
+
+            newData = makeDataFrame(selected_option, selected_frequency, dateBegin, dateEnd)
+            data = pd.concat([newData, data])
+            occupiedCandle = [False] * len(newData) + occupiedCandle
+        
+        elif kindOfAnnotation == "> left":
+            # print("good")
+            dateBegin = data.iloc[0]['Date']
+            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, candlesToLoadwithVerticalLine, ">")
+            dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
+
+            if dateEnd > data.iloc[-1]['Date'].strftime('%Y-%m-%d %H:%M:%S'):
+                print("load to too far")
+                return dash.no_update
+
+            mask = (data['Date'] < dateBegin) | (data['Date'] > dateEnd)
+            newLen = len(data) - len(data[mask])
+
+            data = data[mask]
+            occupiedCandle = occupiedCandle[newLen:]
+        elif kindOfAnnotation == "num left":
+            candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
+
+
+
         fig1 = fig
-        print(data)
-        print("/\/\/\/\/")
         # print(data.columns)
         fig = initCandlestickChart(data)
         addIndicators(data, fig)
 
         for shape in fig1["layout"]["shapes"]:
             fig.add_shape(shape)
-
 
         
 

@@ -230,7 +230,8 @@ def updateData(pair, timeframe):
 
         time.sleep(1)  # 1 second
 
-def findDateNCandlesBeforeDate(timeframe, date, candlesToLoad):
+# before or after date, diretion suggests if it is before or after
+def findDateNCandlesBeforeDate(timeframe, date, candlesToLoad, direction):
 
     timeframe_to_timedelta = {
         '1m': timedelta(minutes=1),
@@ -242,7 +243,11 @@ def findDateNCandlesBeforeDate(timeframe, date, candlesToLoad):
     timeframe_delta = timeframe_to_timedelta.get(timeframe)
     
     timeToLoad = candlesToLoad * timeframe_delta
-    target_date = pd.to_datetime(date, format='%Y-%m-%d %H:%M:%S') - timeToLoad
+    if direction == '<':
+        target_date = pd.to_datetime(date, format='%Y-%m-%d %H:%M:%S') - timeToLoad
+    elif direction == '>':
+        target_date = pd.to_datetime(date, format='%Y-%m-%d %H:%M:%S') + timeToLoad
+
     target_date = target_date.strftime('%Y-%m-%d %H:%M:%S')
 
     return target_date
@@ -313,6 +318,10 @@ def handleLoadingOfAllPairsAndTimeframes(app_data):
             threads.append(thread)
             thread.start()
 
+
+# create_data_folders_and_files(app_data)
+
+# handleLoadingOfAllPairsAndTimeframes(app_data)
 
 # exchange = ccxt.binance()
 

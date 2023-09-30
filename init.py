@@ -23,6 +23,8 @@ options = [
     'ETHDOWNUSDT',
 ]
 
+
+candlesToLoadwithVerticalLine = 100
 # Set the default timeframe and pair
 selected_option = 'BTCBUSD'
 selected_frequency = '1h'
@@ -46,7 +48,8 @@ custom_theme = {
 }    
 
 
-
+def printInfo():
+    print(candlesToLoadwithVerticalLine)
 
 def get_year_month_from_filename(filename):
     match = re.search(r'-(\d{4})-(\d{2})\.csv$', filename)
@@ -76,84 +79,6 @@ def makeDataFrame(symbol, timeframe, beginDate, endDate):
 
 
 
-# def makeDataFrame(path, dateBeginM, dateBeginY, dateEndM, dateEndY): 
-
-#     colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
-
-#     file_list = glob.glob(path + "/*.csv")
-#     excel_list = []
-
-#     if len(file_list) == 0:
-#         print("No data available for this pair")
-#         return pd.DataFrame()
-
-#     sorted_files_by_year_month = sorted(file_list, key=lambda x: re.search(r'-(\d{4})-(\d{2})\.csv$', x).groups())
-
-#     begin_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[0])
-#     end_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[-1])
-
-
-
-#     begin_date_match = begin_date_match.group(1)
-#     end_date_match = end_date_match.group(1)
-#     print("cpicpia")
-
-#     file_list = sorted_files_by_year_month
-
-
-#     zeroBegin = ""
-#     zeroEnd = ""
-#     if len(str(dateBeginM)) == 1:
-#         zeroBegin = "0"
-
-#     if len(str(dateEndM)) == 1:
-#         zeroEnd = "0"
-
-#     begin = str(dateBeginY) + "-" + zeroBegin + str(dateBeginM) + ".csv"
-#     end = str(dateEndY) + "-" + zeroEnd + str(dateEndM) + ".csv"
-
-#     if begin > end:
-#         warning = "enter corect data"
-#         return warning
-
-#     print("begin: " + begin)
-#     print("end: " + end)
-
-
-#     print(begin_date_match)
-#     print(end_date_match)
-#     if begin < begin_date_match or end > end_date_match:
-#         warning = "No data available for this period. Available data from " + begin_date_match + " to " + end_date_match + "."
-#         return warning
-    
-#     else:
-#         whetherToAppend = False
-
-#         for file in file_list:
-            
-#             if file.endswith(begin):
-#                 whetherToAppend = True
-            
-#             if whetherToAppend:
-
-#                 excel_list.append(pd.read_csv(file, header = None))
-
-#             if whetherToAppend == True and file.endswith(end):
-#                 whetherToAppend = False
-        
-
-#     df = pd.concat(excel_list)
-#     df.columns = colnames
-#     df = df.drop(0).reset_index(drop=True)
-
-#     df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d %H:%M:%S')
-#     for column in df.iloc[:, 1:]:
-#         df[column] = df[column].astype(float)
-
-#     print(type(df.iloc[0]['Date']))
-
-#     return df
-
 def availableRange(symbol, timeframe):
 
     colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
@@ -168,20 +93,10 @@ def availableRange(symbol, timeframe):
     else:
         return "this pair is not available"
 
-    # if len(file_list) == 0:
-    #     print("No data available for this pair")
-    #     return "this pair is not available"
-    
-    # sorted_files_by_year_month = sorted(file_list, key=lambda x: re.search(r'-(\d{4})-(\d{2})\.csv$', x).groups())
-    # begin_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[0])
-    # end_date_match = re.search(r'(\d{4}-\d{2}\.csv)', sorted_files_by_year_month[-1])
 
-    # begin_date_match = begin_date_match.group(1)[:-4]
-    # end_date_match = end_date_match.group(1)[:-4]
-
-
-    info = "Available data from " + begin_date_match + " <br/> to " + end_date_match
+    info = "Available data from " + begin_date_match + " to " + end_date_match
     return info
+
 
 def loadTicker(symbol, timeframe, dateBegin, dateEnd):
     # load ticker from file
@@ -191,179 +106,34 @@ def loadTicker(symbol, timeframe, dateBegin, dateEnd):
     
     return df
 
-def addVertialLoaders(fig, data):
-    vertical_line_date_prev = data.iloc[0]['Date']
-    vertical_line_date_next = data.iloc[-1]['Date'] # Replace with the date where you want the vertical line
+def checkIfUpToDate(data, timeframe):
+    lastDate = pd.to_datetime(data.iloc[-1]['Date'])
 
-    yMin = min(data['Low'])
-    yMax = max(data['High'])
-
-
-    if 1==1:# data.iloc[-1]['Date'].month == datetime.now().month and data.iloc[-1]['Date'].year == datetime.now().year:
-        fig.add_trace(go.Scatter(
-            x= [vertical_line_date_next,vertical_line_date_next],
-            y=[0,1000000],
-            mode='lines',
-            name='Vertical Line',
-            line=dict(dash= 'dash',color='blue', width=1), 
-            showlegend=False
-        ))
-        
-        fig.add_annotation(
-            go.layout.Annotation(
-                text="<",
-                # textangle=90, 
-                x=vertical_line_date_next,
-                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
-                y = 0.5,
-                xref="x",
-                yref="paper",
-                showarrow=False,
-                arrowhead=0,
-                bgcolor="blue",
-                bordercolor="blue",
-                borderwidth=2,
-                font=dict(size=12, color="white"),
-                align="center",
-                # captureevents=True,
-                # hovertext="Double-lick to load another month",
-                width=25,
-                height=20,
-                opacity=0.8,
-            )
-        )
+    today = datetime.today()
+    if timeframe == "1m":
+        truncated_date = lastDate.replace(second=0, microsecond=0)
+        truncated_today = today.replace(second=0, microsecond=0)
+    elif timeframe == "1h":
+        truncated_date = lastDate.replace(minute=0, second=0, microsecond=0)
+        truncated_today = today.replace(minute=0, second=0, microsecond=0)
+    elif timeframe == "1d":
+        truncated_date = lastDate.replace(hour=0, minute=0, second=0, microsecond=0)
+        truncated_today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif timeframe == "1w":
+        truncated_date = lastDate.replace(day=0, hour=0, minute=0, second=0, microsecond=0)
+        truncated_today = today.replace(day=0, hour=0, minute=0, second=0, microsecond=0)
     else:
-
-        fig.add_trace(go.Scatter(
-            x= [vertical_line_date_next,vertical_line_date_next],
-            y=[0,1000000],
-            mode='lines',
-            name='Vertical Line',
-            line=dict(color='blue', width=1), 
-            showlegend=False
-        ))
-     
-        fig.add_annotation(
-            go.layout.Annotation(
-                text=">",
-                x=vertical_line_date_next,
-                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
-                y = 0.5,
-                xref="x",
-                yref="paper",
-                showarrow=False,
-                arrowhead=0,
-                bgcolor="blue",
-                bordercolor="blue",
-                borderwidth=2,
-                font=dict(size=12, color="white"),
-                align="center",
-                textangle=0,
-                # captureevents=True,
-                hovertext="Double-lick to load another month",
-                width=25,
-                height=20,
-                opacity=0.8,
-            )
-        )
-
-        fig.add_annotation(
-            go.layout.Annotation(
-                text="<",
-                x=vertical_line_date_next,
-                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
-                y = 0.5,
-                xref="x",
-                yref="paper",
-                showarrow=False,
-                arrowhead=0,
-                bgcolor="blue",
-                bordercolor="blue",
-                borderwidth=2,
-                font=dict(size=12, color="white"),
-                align="center",
-                textangle=0,
-                # captureevents=True,
-                hovertext="Double-lick to load another month",
-                width=25,
-                height=20,
-                opacity=0.8,
-                yshift=30
-            )
-        )
-
-    fig.add_trace(go.Scatter(
-        x= [vertical_line_date_prev,vertical_line_date_prev],
-        y=[0,1000000],
-        mode='lines',
-        name='Vertical Line',
-        line=dict(color='blue', width=1),
-        showlegend=False
-    ))
+        print("error in checkIfUpToDate")
+        return False
     
+    return truncated_date == truncated_today
 
-    # fig.add_vline(x = vertical_line_date)
-
-
-
-
+def addAnnotationRespForNumberOfCandles(fig, vertical_line_date_prev):
+    global candlesToLoadwithVerticalLine
 
     fig.add_annotation(
         go.layout.Annotation(
-            text="<",
-            x=vertical_line_date_prev,
-            # y=(data.iloc[0]['Low'] + data.iloc[0]['High']) / 2,
-            y = 0.5,
-            xref="x",
-            yref="paper",
-            showarrow=False,
-            arrowhead=0,
-            bgcolor="blue",
-            bordercolor="blue",
-            borderwidth=2,
-            font=dict(size=12, color="white"),
-            align="center",
-            textangle=0,
-            # captureevents=True,
-            hovertext="Double-lick to load earlier month",
-            width=25,
-            height=20,
-            opacity=0.8,
-        )
-    )
-
-    fig.add_annotation(
-        go.layout.Annotation(
-            text=">",
-            x=vertical_line_date_prev,
-            # y=((data.iloc[0]['Low'] + data.iloc[0]['High']) / 2),
-            y = 0.5,
-            xref="x",
-            yref="paper",
-            showarrow=False,
-            arrowhead=0,
-            bgcolor="blue",
-            bordercolor="blue",
-            borderwidth=2,
-            font=dict(size=12, color="white"),
-            align="center",
-            textangle=0,
-            # captureevents=True,
-            # hovertext="enter number of candles to load",
-            width=25,
-            height=20,
-            opacity=0.8,
-            yshift=30,
-        )
-    )
-    
-    # text_length = len(annotation_text)
-    # width_multiplier = 8  # Adjust this value based on your needs
-    # width = text_length * width_multiplier
-    # print(min(fig['layout']['yaxis']))
-    fig.add_annotation(
-        go.layout.Annotation(
-            text="100",
+            text=candlesToLoadwithVerticalLine,
             x=vertical_line_date_prev,
             y = 0,
             xref="x",
@@ -384,31 +154,160 @@ def addVertialLoaders(fig, data):
             # yshift=-35,
         )
     )
- 
+
+def addArrowAnnotations(fig, xVal):
+    vertical_line_date_next = xVal
+    fig.add_annotation(
+        go.layout.Annotation(
+            text="→",
+            x=vertical_line_date_next,
+            # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+            y = 0.5,
+            xref="x",
+            yref="paper",
+            showarrow=False,
+            arrowhead=0,
+            bgcolor="blue",
+            bordercolor="blue",
+            borderwidth=2,
+            font=dict(size=15, color="white"),
+            align="center",
+            textangle=0,
+            # captureevents=True,
+            hovertext="Double-click to load/hide candles",
+            width=25,
+            height=20,
+            opacity=1,
+        )
+    )
     
+    fig.add_annotation(
+        go.layout.Annotation(
+            text="←",
+            x=vertical_line_date_next,
+            # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+            y = 0.5,
+            xref="x",
+            yref="paper",
+            showarrow=False,
+            arrowhead=2,
+            bgcolor="blue",
+            bordercolor="blue",
+            borderwidth=2,
+            font=dict(size=15, color="white"),
+            align="center",
+            textangle=0,
+            # captureevents=True,
+            hovertext="Double-cick to load/hide candles",
+            width=25,
+            height=20,
+            opacity=1,
+            yshift=30,
+        )
+    )
+    
+
+def addVertialLoaders(fig, data):
+
+    vertical_line_date_prev = data.iloc[0]['Date']
+    vertical_line_date_next = data.iloc[-1]['Date'] # Replace with the date where you want the vertical line
+
+    yMin = min(data['Low'])
+    yMax = max(data['High'])
+
+
+    if checkIfUpToDate(data, selected_frequency):
+        fig.add_trace(go.Scatter(
+            x= [vertical_line_date_next,vertical_line_date_next],
+            y=[0,1000000],
+            mode='lines',
+            name='Vertical Line',
+            line=dict(dash= 'dash',color='blue', width=1), 
+            showlegend=False
+        ))
+        
+        fig.add_annotation(
+            go.layout.Annotation(
+                text="←",
+                # textangle=90, 
+                x=vertical_line_date_next,
+                # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+                y = 0.5,
+                xref="x",
+                yref="paper",
+                showarrow=True,
+                arrowhead=2,
+                bgcolor="blue",
+                bordercolor="blue",
+                borderwidth=2,
+                font=dict(size=12, color="white"),
+                align="center",
+                # captureevents=True,
+                hovertext="Double-lick to hide candles",
+                width=25,
+                height=20,
+                opacity=0.8,
+            )
+        )
+    else:
+
+        fig.add_trace(go.Scatter(
+            x= [vertical_line_date_next,vertical_line_date_next],
+            y=[0,1000000],
+            mode='lines',
+            name='Vertical Line',
+            line=dict(color='blue', width=1), 
+            showlegend=False
+        ))
+     
+        addArrowAnnotations(fig, vertical_line_date_next)
+
+    print(candlesToLoadwithVerticalLine, " dbhgkjdhgkdjsghfasdjkghk")
+    addAnnotationRespForNumberOfCandles(fig, vertical_line_date_next)
+
+
+    fig.add_trace(go.Scatter(
+        x= [vertical_line_date_prev,vertical_line_date_prev],
+        y=[0,1000000],
+        mode='lines',
+        name='Vertical Line',
+        line=dict(color='blue', width=1),
+        showlegend=False
+    ))
+
+    addArrowAnnotations(fig, vertical_line_date_prev)
+    
+    # text_length = len(annotation_text)
+    # width_multiplier = 8  # Adjust this value based on your needs
+    # width = text_length * width_multiplier
+    # print(min(fig['layout']['yaxis']))
+ 
+
+    addAnnotationRespForNumberOfCandles(fig, vertical_line_date_prev)
+
 
     yaxis_range = [yMin, yMax]  # Set the desired range
     fig.update_layout(yaxis=dict(range=yaxis_range))
 
+# TODO repair horizontal line - it shouldnt be added as a shape but as a trace
+# or at least somehow disabled to dragging it
 def addCurrentPriceLine(fig, data):
     # last_candle = data[-1]
     last_candle = data.iloc[-1]['Close'] > data.iloc[-1]['Open']
 
     line_color = 'green' if last_candle else 'salmon'
 
-    fig.add_shape(
-        go.layout.Shape(
-            type="line",
-            xref="paper", 
-            # x0=data.iloc[0]['Date'],
-            x0 = 0,
-            # x1=data.iloc[-1]['Date'], 
-            x1 = 1,
-            y0=data.iloc[-1]['Close'],  # Specify the horizontal line's y-coordinate
-            y1=data.iloc[-1]['Close'],  # Specify the horizontal line's y-coordinate
-            line=dict(color=line_color, width=0.8, dash='dot'),  # Line color, width, and style
-        )
+# Create the horizontal line trace
+    horizontal_line_trace = go.Scatter(
+        x=data['Date'],  # Specify the x-values for the horizontal line (dates)
+        y=[data.iloc[-1]['Close']] * len(data),  # Create a list of the same y-value (closing price)
+        mode='lines',
+        line=dict(color=line_color, width=0.8, dash='dot'),  # Line color, width, and style
+        name='Horizontal Line',
     )
+
+    fig.add_trace(horizontal_line_trace)  # Add the horizontal line trace to the figure
+
     text_length = len(str(data.iloc[-1]['Close']))
     width_multiplier = 7  # Adjust this value based on your needs
     width = text_length * width_multiplier
@@ -531,7 +430,6 @@ def initEquityChart(equity_values):
         ],
         # layout=dict(template="plotly_dark")  # Apply dark mode template to this chart
     )
-    print(drawDowns)
 
     updated_fig.add_trace(go.Bar(x=list(range(len(drawDowns))), y=drawDowns,
                     marker=dict(opacity = 0.2, color='blue', line=dict(width=0)),
