@@ -1,11 +1,5 @@
 
-import pandas as pd
-import glob
-from datetime import datetime
-import plotly.graph_objects as go
-import plotly.io as pio
-import re
-import libraries
+from libraries import *
 from indicators import addVolume
 
 
@@ -170,13 +164,13 @@ def addArrowAnnotations(fig, xVal):
             bgcolor="blue",
             bordercolor="blue",
             borderwidth=2,
-            font=dict(size=15, color="white"),
+            font=dict(size=10, color="white"),
             align="center",
             textangle=0,
             # captureevents=True,
             hovertext="Double-click to load/hide candles",
-            width=25,
-            height=20,
+            width=16,
+            height=35,
             opacity=1,
         )
     )
@@ -194,15 +188,15 @@ def addArrowAnnotations(fig, xVal):
             bgcolor="blue",
             bordercolor="blue",
             borderwidth=2,
-            font=dict(size=15, color="white"),
+            font=dict(size=10, color="white"),
             align="center",
             textangle=0,
             # captureevents=True,
             hovertext="Double-cick to load/hide candles",
-            width=25,
-            height=20,
+            width=16,
+            height=35,
             opacity=1,
-            yshift=30,
+            yshift=45,
         )
     )
     
@@ -262,7 +256,6 @@ def addVertialLoaders(fig, data):
      
         addArrowAnnotations(fig, vertical_line_date_next)
 
-    print(candlesToLoadwithVerticalLine, " dbhgkjdhgkdjsghfasdjkghk")
     addAnnotationRespForNumberOfCandles(fig, vertical_line_date_next)
 
 
@@ -289,8 +282,7 @@ def addVertialLoaders(fig, data):
     yaxis_range = [yMin, yMax]  # Set the desired range
     fig.update_layout(yaxis=dict(range=yaxis_range))
 
-# TODO repair horizontal line - it shouldnt be added as a shape but as a trace
-# or at least somehow disabled to dragging it
+
 def addCurrentPriceLine(fig, data):
     # last_candle = data[-1]
     last_candle = data.iloc[-1]['Close'] > data.iloc[-1]['Open']
@@ -299,8 +291,10 @@ def addCurrentPriceLine(fig, data):
 
 # Create the horizontal line trace
     horizontal_line_trace = go.Scatter(
-        x=data['Date'],  # Specify the x-values for the horizontal line (dates)
-        y=[data.iloc[-1]['Close']] * len(data),  # Create a list of the same y-value (closing price)
+        x=[data.iloc[0]['Date'], data.iloc[-1]['Date'] + pd.DateOffset(years=3)],  # Extend the line by 30 days (adjust as needed)
+        y=[data.iloc[-1]['Close'], data.iloc[-1]['Close']], 
+        # x=data['Date'],  # Specify the x-values for the horizontal line (dates)
+        # y=[data.iloc[-1]['Close']] * len(data),  # Create a list of the same y-value (closing price)
         mode='lines',
         line=dict(color=line_color, width=0.8, dash='dot'),  # Line color, width, and style
         name='Horizontal Line',
@@ -334,7 +328,11 @@ def addCurrentPriceLine(fig, data):
             opacity=1,
         )
     )
-    
+    x_axis_range = [data.iloc[0]['Date'], data.iloc[-1]['Date']]  # Set the desired range
+    fig.update_layout(xaxis=dict(range=x_axis_range))
+
+
+
 
 def initCandlestickChart(data):
 

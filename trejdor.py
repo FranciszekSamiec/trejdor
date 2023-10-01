@@ -1,5 +1,7 @@
 from libraries import *
 from indicators import *
+import init # written this way to change the alue of global variables in
+# init (right now only one - candles... = 100)
 from init import *
 from layout import createLayout
 from eqChart import *
@@ -51,7 +53,7 @@ timezone = pytz.timezone("Europe/Warsaw")
 startDate = "2023-01-01 00:00:00"
 
 
-timeframe = selected_frequency    
+timeframe = init.selected_frequency    
 
 # num of candles to load at the beginning of the app
 # but also when new pair is loaded or timeframe is changed
@@ -64,11 +66,6 @@ numOfCandlesToLoad = 2000
 endDate = current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 beginDate = findDateNCandlesBeforeDate(timeframe, endDate, numOfCandlesToLoad, "<")
 
-print(candlesToLoadwithVerticalLine)
-
-candlesToLoadwithVerticalLine = 1123
-print(candlesToLoadwithVerticalLine)
-printInfo()
 app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
@@ -824,7 +821,6 @@ def loadNewData(relayout_data):
     global selected_option
     global fig
     global occupiedCandle
-    global candlesToLoadwithVerticalLine
     global timeframe
 
 
@@ -837,7 +833,7 @@ def loadNewData(relayout_data):
         if kindOfAnnotation == "> right":
             dateBegin = data.iloc[-1]['Date']
 
-            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, candlesToLoadwithVerticalLine, ">")
+            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, init.candlesToLoadwithVerticalLine, ">")
             dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
 
             newData = makeDataFrame(selected_option, selected_frequency, dateBegin, dateEnd)
@@ -845,8 +841,10 @@ def loadNewData(relayout_data):
             occupiedCandle.extend([False] * len(newData)) 
 
         elif kindOfAnnotation == "< right":
+
+            print(candlesToLoadwithVerticalLine)
             dateBegin = data.iloc[-1]['Date']
-            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, candlesToLoadwithVerticalLine, "<")
+            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, init.candlesToLoadwithVerticalLine, "<")
             dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
 
             print(dateEnd, " ", dateBegin)
@@ -866,14 +864,14 @@ def loadNewData(relayout_data):
         elif kindOfAnnotation == "num right":
             print(candlesToLoadwithVerticalLine)
             print(getNumberOfCandlesfromAnnotation(relayout_data))
-            candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
-            print(candlesToLoadwithVerticalLine)
+            init.candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
+            print(init.candlesToLoadwithVerticalLine)
 
         elif kindOfAnnotation == "< left":
             print("good")
 
             dateEnd = data.iloc[0]['Date']
-            dateBegin = findDateNCandlesBeforeDate(timeframe, dateEnd, candlesToLoadwithVerticalLine, "<")
+            dateBegin = findDateNCandlesBeforeDate(timeframe, dateEnd, init.candlesToLoadwithVerticalLine, "<")
             dateEnd = dateEnd.strftime('%Y-%m-%d %H:%M:%S')
 
    
@@ -885,7 +883,7 @@ def loadNewData(relayout_data):
         elif kindOfAnnotation == "> left":
             # print("good")
             dateBegin = data.iloc[0]['Date']
-            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, candlesToLoadwithVerticalLine, ">")
+            dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, init.candlesToLoadwithVerticalLine, ">")
             dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
 
             if dateEnd > data.iloc[-1]['Date'].strftime('%Y-%m-%d %H:%M:%S'):
@@ -898,7 +896,7 @@ def loadNewData(relayout_data):
             data = data[mask]
             occupiedCandle = occupiedCandle[newLen:]
         elif kindOfAnnotation == "num left":
-            candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
+            init.candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
 
 
 
@@ -910,7 +908,18 @@ def loadNewData(relayout_data):
         for shape in fig1["layout"]["shapes"]:
             fig.add_shape(shape)
 
-        
+        if 'xaxis.range[0]' in global_result:
+            fig['layout']['xaxis']['range'] = [
+                global_result['xaxis.range[0]'],
+                global_result['xaxis.range[1]']
+            ]
+
+        if 'yaxis.range[0]' in global_result:
+            fig['layout']['yaxis']['range'] = [
+                global_result['yaxis.range[0]'],
+                global_result['yaxis.range[1]']
+            ]
+
 
         return fig
 
