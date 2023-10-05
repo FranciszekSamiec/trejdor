@@ -298,6 +298,7 @@ def addCurrentPriceLine(fig, data):
         mode='lines',
         line=dict(color=line_color, width=0.8, dash='dot'),  # Line color, width, and style
         name='Horizontal Line',
+        showlegend=False
     )
 
     fig.add_trace(horizontal_line_trace)  # Add the horizontal line trace to the figure
@@ -340,23 +341,27 @@ def initCandlestickChart(data):
                                         open=data['Open'],
                                         high=data['High'],
                                         low=data['Low'],
-                                        close=data['Close'])],
+                                        close=data['Close'],
+                                        name='ohlc',)],
                                         )
     fig.update_layout(template=custom_theme)
 
-    # Add custom layout
+    # # Add custom layout
     fig.update_layout(
         title="",
         xaxis_rangeslider_visible=False,
         yaxis_autorange=False,
-        margin = {
-            'l': 0,
-            'r': 125,
-            'b': 0,
-            't': 80,
-        },
+        # this is very interesting, it causes problems with scrolling zoom
+        # making it shaking everything, 
+        # margin = {
+        #     'l': 0,
+        #     # 'r': 0,
+        #     # 'b': 0,
+        #     # 't': 0,
+        # },
         yaxis_title="",
         xaxis_title=" ",
+        
     )
     pio.templates.default = "plotly_dark"
 

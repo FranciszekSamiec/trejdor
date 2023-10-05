@@ -14,7 +14,7 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                     id='candlestick-chart' ,
                     figure=fig,
                     # animate=True,
-                    config={'displaylogo': False,'editable': True,'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': False}, # scroll in dash is fucked up 
+                    config={'displaylogo': False,'editable': True,'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': True}, # scroll in dash is fucked up 
                     style={'displayModeBar': False, 'height': '62vh', 'position': 'relative'}  # Set the chart height as 90% of the viewport height
                 ),
                 html.Div([

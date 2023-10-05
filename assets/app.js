@@ -71,3 +71,36 @@
 //     prevent_initial_call=True
 
 // )
+
+// document.addEventListener('DOMContentLoaded', function() {
+
+//     enableCustomScrollZoom();
+
+// });
+
+// function enableCustomScrollZoom() {
+//     var chart = document.getElementById('candlestick-chart');
+//     console.log('JavaScript file is ciipa.');
+
+//     chart.addEventListener('wheel', function(e) {
+//         // e.preventDefault();  // Prevent the default scroll behavior
+//         console.log('Mouse wheel event detected.');
+
+//         // Define zoom factor and direction (positive or negative)
+//         var zoomFactor = 0.1;
+//         var zoomDirection = e.deltaY < 0 ? 1 : -1;
+        
+//         // Calculate the new x-axis range based on the zoom factor and direction
+//         var xaxisRange = chart.layout.xaxis.range;
+//         var xaxisRangeNew = [
+//             xaxisRange[0] * Math.pow(1 + zoomFactor, zoomDirection),
+//             xaxisRange[1] * Math.pow(1 + zoomFactor, zoomDirection)
+//         ];
+        
+//         // Update the chart's x-axis range
+//         Plotly.update(chart, {'xaxis.range': xaxisRangeNew});
+//     });
+// }
+
+// enableCustomScrollZoom();
+

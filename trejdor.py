@@ -93,18 +93,8 @@ info = availableRange(selected_option, selected_frequency)
 # Define the layout of the app (in the layout.py file)
 app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info)
 #-------------------------------------------------------------- INITIALIZATION
-# app.clientside_callback(
-#     """
-#     document.getElementById('candlestick-chart').on('plotly_afterplot', function() {
-#         var annotation = document.getElementById('annotation-id');
-#         annotation.addEventListener('plotly_click', function() {
-#             // Handle the click event on the annotation here
-#             alert('Annotation clicked!'); // Example action
-#             // You can load another month of data or perform any desired action.
-#         });
-#     });
-#     """
-# )
+
+
 
 
 
@@ -559,6 +549,14 @@ def updateChart(relayout_data):
     # so it doesnt trigger displayclickdata
     if isChangedShape(relayout_data):
 
+        entryDate = 0
+        entryPrice = 0
+        endDate = 0
+        stopLoss = 0
+        takeProfit = 0
+
+        # print(relayout_data, "<<<<<<<<<<<")
+
         for key, val in relayout_data.items():
             
             if type(val) == str:
@@ -578,19 +576,49 @@ def updateChart(relayout_data):
 
                 Out = str(key_number) + ' ' + str(property_name) + ' ' + str(val)
                 # print(Out)
+
+                stopLoss = fig['layout']['shapes'][key_number]['y1']
+                takeProfit = fig['layout']['shapes'][key_number]['y1']
                 
+                # print(relayout_data)
+
+                # print(fig['layout']['annotations'])
+                # print("?")
+
                 if property_name == 'x1':
                     if key_number % 2 == 1:
                         fig['layout']['shapes'][key_number - 1][property_name] = val
                     else:
                         fig['layout']['shapes'][key_number + 1][property_name] = val
+                endDate = val    
+
+
 
                 if property_name == 'x0':
                     
+                    # if fig['layout']['shapes'][key_number - 1]['x0'] == val:
+                    #     entryDate = val
+
                     if key_number % 2 == 1:
+                        oldName = fig['layout']['shapes'][key_number - 1]['x0']
                         fig['layout']['shapes'][key_number - 1][property_name] = val
                     else:
+                        oldName = fig['layout']['shapes'][key_number + 1]['x0']
                         fig['layout']['shapes'][key_number + 1][property_name] = val
+
+                    entryDate = val
+                    print(fig['layout']['annotations'])
+                    print(" ====================== ")
+                    print(oldName, " ", entryDate)
+                    changeNameOfAnnotation(fig, oldName, entryDate)
+                    print(fig['layout']['annotations'])
+
+                    # print(val, " +++++++ ", fig['layout']['shapes'][key_number - 1])
+
+
+                    # deleteAnnotation(fig, entryDate)  
+                    # addRRRatioAnnotation(fig, entryPrice, val, endDate, stopLoss, takeProfit)
+
 
                 if property_name == 'y0':
 
@@ -598,7 +626,17 @@ def updateChart(relayout_data):
                         fig['layout']['shapes'][key_number - 1][property_name] = val
                     else:
                         fig['layout']['shapes'][key_number + 1][property_name] = val
-            
+                    
+                    entryPrice = val
+
+                    # deleteAnnotation(fig, entryDate)
+                    # addRRRatioAnnotation(fig, val, entryDate, endDate, stopLoss, takeProfit)
+
+        # entry DAte is id of annotation
+        deleteAnnotation(fig, entryDate)
+        addRRRatioAnnotation(fig, entryPrice, entryDate, endDate, stopLoss, takeProfit)    
+        
+
 
         # modulo division is to avoid over int limit
         # also it is needed to caouse change to dummy so it triggers callback: displayclickdata
@@ -908,6 +946,8 @@ def loadNewData(relayout_data):
         for shape in fig1["layout"]["shapes"]:
             fig.add_shape(shape)
 
+        # global_result = makeAdjustedRelayout(relayout_data)
+
         if 'xaxis.range[0]' in global_result:
             fig['layout']['xaxis']['range'] = [
                 global_result['xaxis.range[0]'],
@@ -954,7 +994,6 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
     global startCapital
     global prevCapital
     global firstWasChangedShape
-    print(relayout_data)
     # print()
     # print(clickData)
     if value != prevRadio:
@@ -1071,10 +1110,17 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
                     'takeProfit': data.iloc[point_index]['Close'] - (data.iloc[point_index]['hh'] - data.iloc[point_index]['Close']),
                     'direction': value
                 }
-            
-            # print all vaues from exwcutPos 
-     
 
+            # print(fig['layout']['shapes'])
+            print(clickData, "adasd")
+
+            print(type(clicked_candle['Date']))
+            print(clicked_candle['Date'])
+            addRRRatioAnnotation(fig, clicked_candle['Close'], clicked_candle['Date'],
+                                  data.iloc[point_index + 24]['Date'], newPos['stopLoss'],
+                                    newPos['takeProfit'])
+            print("kuuurwa")
+            # print(fig['layout']['annotations'])
 
             firstWasChangedShape = True
             listOfPositions.append(newPos)
@@ -1146,9 +1192,99 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
         
         count1 = (count1 + 1) % 3
         return fig1, count1
-            
+    
 
-    return fig, count1
+def changeNameOfAnnotation(fig, entryDate, newName):
+    annotations_list = list(fig['layout']['annotations'])
+
+
+
+    for annotation in annotations_list:
+        # print(annotation)
+        if annotation['name'] == str(entryDate):
+            # print("deleted")
+            # print(annotation['name'], entryDate ," <<<<<----", annotation['x'])
+            # print(annotations_list)
+            annotation['name'] = str(newName)
+            # print(annotations_list)
+            # break
+
+    fig['layout']['annotations'] = annotations_list
+
+def deleteAnnotation(fig, entryDate):
+
+
+    annotations_list = list(fig['layout']['annotations'])
+    # print(annotations_list)
+    print("--------")
+
+
+    for annotation in annotations_list:
+        # print(annotation)
+        if annotation['name'] == str(entryDate):
+            # print("deleted")
+            # print(annotation['name'], entryDate ," <<<<<----", annotation['x'])
+            # print(annotations_list)
+            annotations_list.remove(annotation)
+            # print(annotations_list)
+            # break
+
+    
+    # fig.update_layout(annotations=annotations_list)
+    # dont know why but line above does some stranger shit, i wasted 10 fucking hours on it 
+    # dash is a fucking piece of shit
+    fig['layout']['annotations'] = annotations_list
+
+
+
+# name is used to identify pair annotation with its position - long/short rectangle shape
+# as a name date is used
+def addRRRatioAnnotation(fig, entryPrice, entryDate, endDate, stopLoss, takeProfit):
+    # newPos = {
+    # 'index': point_index,
+    # 'entryDate': clicked_candle['Date'],
+    # 'entryPrice': clicked_candle['Close'],
+    # 'stopLoss': data.iloc[point_index]['hh'],
+    # 'takeProfit': data.iloc[point_index]['Close'] - (data.iloc[point_index]['hh'] - data.iloc[point_index]['Close']),
+    # 'direction': value
+    #     }
+    # print(fig['layout']['annotations'])
+    print("--------")   
+
+    RRratio = abs(takeProfit - entryPrice) / abs(entryPrice - stopLoss)
+
+    fig.add_annotation(
+        go.layout.Annotation(
+            name= str(entryDate),
+            text="RR ratio: " + str(round(RRratio, 2)),
+            x = entryDate + ( endDate - entryDate) / 2,
+            y = entryPrice,
+            xref="x",
+            yref="y", 
+            showarrow=False,
+            arrowhead=0,
+            bgcolor="#323738",
+            bordercolor="blue",
+            borderwidth=1,
+            font=dict(size=9, color="white"),
+            align="center",
+            textangle=0,
+            # captureevents=True,
+            hovertext="enter number of candles to load",
+            width=70,
+            height=15,
+            opacity=1,
+            # yshift=-35,
+        )
+    )
+    # print(fig['layout']['annotations'])
+
+    # print(fig['layout']['annotations'])
+    print("--------")   
+
+
+
+#     return fig, count1
 
 
 if __name__ == '__main__':
