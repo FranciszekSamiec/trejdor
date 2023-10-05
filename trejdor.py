@@ -537,6 +537,7 @@ def round_to_nearest_hour(date_str):
     return rounded_date  # Return the datetime object
 
 
+
 @app.callback(
     Output('dummyOut', 'children'),
     Input('candlestick-chart', 'relayoutData')
@@ -549,12 +550,13 @@ def updateChart(relayout_data):
     # so it doesnt trigger displayclickdata
     if isChangedShape(relayout_data):
 
+        numberOfShape = -1
         entryDate = 0
         entryPrice = 0
         endDate = 0
         stopLoss = 0
         takeProfit = 0
-
+        direction = ""
         # print(relayout_data, "<<<<<<<<<<<")
 
         for key, val in relayout_data.items():
@@ -577,8 +579,8 @@ def updateChart(relayout_data):
                 Out = str(key_number) + ' ' + str(property_name) + ' ' + str(val)
                 # print(Out)
 
-                stopLoss = fig['layout']['shapes'][key_number]['y1']
-                takeProfit = fig['layout']['shapes'][key_number]['y1']
+                # stopLoss = fig['layout']['shapes'][key_number]['y1']
+                # takeProfit = fig['layout']['shapes'][key_number]['y1']
                 
                 # print(relayout_data)
 
@@ -588,6 +590,13 @@ def updateChart(relayout_data):
                 if property_name == 'x1':
                     if key_number % 2 == 1:
                         fig['layout']['shapes'][key_number - 1][property_name] = val
+                        numberOfShape = key_number - 1 # con be done only here because every rel has all coordinates
+                        if fig['layout']['shapes'][numberOfShape]['y0'] <= fig['layout']['shapes'][numberOfShape]['y1']:
+                            # short position
+                            direction = "short"
+                        elif fig['layout']['shapes'][numberOfShape]['y0'] > fig['layout']['shapes'][numberOfShape]['y1']:
+                            # long position
+                            direction = "long"
                     else:
                         fig['layout']['shapes'][key_number + 1][property_name] = val
                 endDate = val    
@@ -595,9 +604,7 @@ def updateChart(relayout_data):
 
 
                 if property_name == 'x0':
-                    
-                    # if fig['layout']['shapes'][key_number - 1]['x0'] == val:
-                    #     entryDate = val
+   
 
                     if key_number % 2 == 1:
                         oldName = fig['layout']['shapes'][key_number - 1]['x0']
@@ -607,17 +614,13 @@ def updateChart(relayout_data):
                         fig['layout']['shapes'][key_number + 1][property_name] = val
 
                     entryDate = val
-                    print(fig['layout']['annotations'])
-                    print(" ====================== ")
-                    print(oldName, " ", entryDate)
+                    # print(fig['layout']['annotations'])
+                    # print(" ====================== ")
+                    # print(oldName, " ", entryDate)
                     changeNameOfAnnotation(fig, oldName, entryDate)
-                    print(fig['layout']['annotations'])
+                    # print(fig['layout']['annotations'])
 
                     # print(val, " +++++++ ", fig['layout']['shapes'][key_number - 1])
-
-
-                    # deleteAnnotation(fig, entryDate)  
-                    # addRRRatioAnnotation(fig, entryPrice, val, endDate, stopLoss, takeProfit)
 
 
                 if property_name == 'y0':
@@ -631,6 +634,16 @@ def updateChart(relayout_data):
 
                     # deleteAnnotation(fig, entryDate)
                     # addRRRatioAnnotation(fig, val, entryDate, endDate, stopLoss, takeProfit)
+
+        color1 = fig['layout']['shapes'][numberOfShape]['fillcolor']
+
+        if color1 == 'Salmon':
+            stopLoss = fig['layout']['shapes'][numberOfShape]['y1']
+            takeProfit = fig['layout']['shapes'][numberOfShape + 1]['y1']       
+        elif color1 == 'Green':
+            takeProfit = fig['layout']['shapes'][numberOfShape]['y1']
+            stopLoss = fig['layout']['shapes'][numberOfShape + 1]['y1']
+
 
         # entry DAte is id of annotation
         deleteAnnotation(fig, entryDate)
@@ -1147,6 +1160,8 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
 
 
             occupiedCandle = [False] * len(data.index)
+
+            deleteAllRRRatioAnnotations(fig)
             # if len(occupiedCandle) > 0:
             if point_index is not None:
                 occupiedCandle[point_index] = True
@@ -1211,12 +1226,30 @@ def changeNameOfAnnotation(fig, entryDate, newName):
 
     fig['layout']['annotations'] = annotations_list
 
+def deleteAllRRRatioAnnotations(fig):
+    annotations_list = list(fig['layout']['annotations'])
+    print(annotations_list)
+    print(len(annotations_list))
+
+    newListOfAnnotations = []
+    for annotation in annotations_list:
+        print(annotation['name'], " ", annotation)
+        if annotation['name'] == None:
+            newListOfAnnotations.append(annotation)
+            # annotations_list.remove(annotation)
+
+
+    print("£££")
+    print(annotations_list)
+    fig['layout']['annotations'] = newListOfAnnotations
+
+
+
 def deleteAnnotation(fig, entryDate):
 
 
     annotations_list = list(fig['layout']['annotations'])
-    # print(annotations_list)
-    print("--------")
+
 
 
     for annotation in annotations_list:
@@ -1228,8 +1261,8 @@ def deleteAnnotation(fig, entryDate):
             annotations_list.remove(annotation)
             # print(annotations_list)
             # break
-
-    
+            
+                
     # fig.update_layout(annotations=annotations_list)
     # dont know why but line above does some stranger shit, i wasted 10 fucking hours on it 
     # dash is a fucking piece of shit
@@ -1240,16 +1273,8 @@ def deleteAnnotation(fig, entryDate):
 # name is used to identify pair annotation with its position - long/short rectangle shape
 # as a name date is used
 def addRRRatioAnnotation(fig, entryPrice, entryDate, endDate, stopLoss, takeProfit):
-    # newPos = {
-    # 'index': point_index,
-    # 'entryDate': clicked_candle['Date'],
-    # 'entryPrice': clicked_candle['Close'],
-    # 'stopLoss': data.iloc[point_index]['hh'],
-    # 'takeProfit': data.iloc[point_index]['Close'] - (data.iloc[point_index]['hh'] - data.iloc[point_index]['Close']),
-    # 'direction': value
-    #     }
-    # print(fig['layout']['annotations'])
-    print("--------")   
+
+
 
     RRratio = abs(takeProfit - entryPrice) / abs(entryPrice - stopLoss)
 
@@ -1277,14 +1302,7 @@ def addRRRatioAnnotation(fig, entryPrice, entryDate, endDate, stopLoss, takeProf
             # yshift=-35,
         )
     )
-    # print(fig['layout']['annotations'])
 
-    # print(fig['layout']['annotations'])
-    print("--------")   
-
-
-
-#     return fig, count1
 
 
 if __name__ == '__main__':
