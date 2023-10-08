@@ -96,6 +96,16 @@ app.layout = createLayout(fig, options, frequency_options, selected_option, equi
 
 
 
+@app.callback(
+    Output('dummyOutNewPos', 'children', allow_duplicate=True), 
+    Input('options-percent-to-risk', 'value'),
+    prevent_initial_call=True
+)
+def updatePercToRisk(newPerc):
+    global perecentToRisk
+    perecentToRisk = newPerc / 100
+    return dash.no_update
+
 
 
 def isChangedShape(relayoutData):
@@ -356,6 +366,7 @@ def changeFrequency(selected_frequency):
     global equity_values
     global occupiedCandle
     global listOfPositions
+    global timeframe 
     # global beginDate
 
     if selected_frequency is None:
@@ -379,6 +390,7 @@ def changeFrequency(selected_frequency):
     equity_values = [startCapital]
     equity_chart_fig = initEquityChart(equity_values)
 
+    timeframe = selected_frequency
     return fig, ''
 
 @app.callback(
@@ -673,7 +685,7 @@ def keepingTrackOfLastRel(relayout_data):
     if relayout_data is not None:
         if not isChangedShape(relayout_data):
             # global_result = copy.deepcopy(relayout_data)
-            global_result = makeAdjustedRelayout(relayout_data)
+            global_result = makeAdjustedRelayout(fig, relayout_data)
 
     
     return str(global_result)
@@ -694,7 +706,7 @@ def isChangedZoom(relayout_data):
     return first_key.startswith('xaxis.range')
 
 def isAutoSized(relayout_data):
-
+    print(relayout_data)
     first_key = getFirstKeyOfRelayoutData(relayout_data)
 
     return first_key.startswith('xaxis.autorange')
@@ -722,7 +734,7 @@ def autoRangeRelayout():
     startDate = data.iloc[0]['Date']
     endDate = data.iloc[len(data.index) - 1]['Date']
 
-
+    print(startDate, " <<<<>>>> ", endDate)
 
     maxVal = data['High'].max()
     minVal = data['Low'].min()
@@ -745,14 +757,53 @@ def calculateTopBottomMargin(minVal, maxVal):
 
     return margin
 
+# have to round to hours minutes etc
 def getIndexFromDate(date):
+
+    global timeframe
+
     if date < data.iloc[0]['Date']:
         return 0
     elif date > data.iloc[len(data.index) - 1]['Date']:
         return len(data.index) - 1
+    # print(date)
+    test = data['Date'].tolist()
+    # test = test.sort()
+    test = sorted(test)
+    # print(test)
+    # date  = date.timestamp()
+    # print(test)
+    date = pd.Timestamp(date)
+
+    # print(type(data.iloc[0]['Date']), " ", type(date))
+    # print(timeframe)
+    if timeframe == '1m':
+        freq = 'T'
+    elif timeframe == '1h':
+        freq = 'H'
+    elif timeframe == '1d':
+        freq = 'D'
+    elif timeframe == '1w':
+        freq = 'W'
     
+    if timeframe != '1w':
+        date = date.floor(freq)
+    else:
+        date = date.week
+
+    # print(len(data.index))
+
+    # print(type(timestampDate))
     for index in range(0, len(data.index)):
-        if data.iloc[index]['Date'] == date:
+        # print(data.iloc[index]['Date'], " ", date)
+        if timeframe != '1w':
+            flooredDate = data.iloc[index]['Date'].floor(freq)
+        else:
+            flooredDate = data.iloc[index]['Date'].week
+        # print(flooredDate, " <", date)
+
+        if flooredDate == date:
+            # print("znalaz")
             return index
 
 def findMinMaxValues(start, end):
@@ -768,15 +819,17 @@ def findMinMaxValues(start, end):
 
     return res    
 
-def makeAdjustedRelayout(relayout_data):
+def makeAdjustedRelayout(fig, relayout_data):
 
     # if autorange return relayout_data and do not proceed
   
     if isAutoSized(relayout_data):
+        print("gggurba")
         return autoRangeRelayout()   
     
     if not isChangedZoom(relayout_data):
         return global_result
+
 
 
     adjustedRel = {}
@@ -787,9 +840,11 @@ def makeAdjustedRelayout(relayout_data):
     # print("#####")
     # print(end)
     # print(endIndex)
+    print(start, end, "%")
     startIndex = getIndexFromDate(start)
     endIndex = getIndexFromDate(end)
 
+    print(startIndex, endIndex, "$$$$$$$")
     minMax = findMinMaxValues(startIndex, endIndex)
 
     margin = calculateTopBottomMargin(minMax[0], minMax[1])
@@ -797,6 +852,12 @@ def makeAdjustedRelayout(relayout_data):
     adjustedRel['xaxis.range[1]'] = end
     adjustedRel['yaxis.range[0]'] = minMax[0] - margin
     adjustedRel['yaxis.range[1]'] = minMax[1] + margin
+
+    filteredData = data.iloc[startIndex:endIndex]
+
+    fig.update_layout(
+        yaxis2_range=[0, max(filteredData['Volume']) * 2],
+    )
 
     return adjustedRel
 
@@ -832,13 +893,11 @@ def getNumberOfCandlesfromAnnotation(relayout_data):
 def whatKindOfAnnotation(relayout_data):
     # print(relayout_data)
     first_key = getFirstKeyOfRelayoutData(relayout_data)
-    print(first_key, "<<<<<<<<<")
     pattern = r'\[(\d+)\]'
     match = re.search(pattern, first_key)
     if match:
         # Extract the matched number from the regex match
         extracted_number = match.group(1)
-        print(extracted_number)
         # Convert the extracted number to an integer
 
         if extracted_number == '0':
@@ -893,33 +952,25 @@ def loadNewData(relayout_data):
 
         elif kindOfAnnotation == "< right":
 
-            print(candlesToLoadwithVerticalLine)
             dateBegin = data.iloc[-1]['Date']
             dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, init.candlesToLoadwithVerticalLine, "<")
             dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
 
-            print(dateEnd, " ", dateBegin)
 
 
             if dateEnd < data.iloc[0]['Date'].strftime('%Y-%m-%d %H:%M:%S'):
-                print("hided to too far")
                 return dash.no_update
             # end and begin switched places because we want to hide candles
             mask = (data['Date'] > dateBegin) | (data['Date'] < dateEnd)
             newLen = len(data) - len(data[mask])
             data = data[mask]
-            print(data)
 
             occupiedCandle = occupiedCandle[:-newLen]
             # newData = makeDataFrame(selected_option, selected_frequency, dateEnd, dateBegin)
         elif kindOfAnnotation == "num right":
-            print(candlesToLoadwithVerticalLine)
-            print(getNumberOfCandlesfromAnnotation(relayout_data))
             init.candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
-            print(init.candlesToLoadwithVerticalLine)
 
         elif kindOfAnnotation == "< left":
-            print("good")
 
             dateEnd = data.iloc[0]['Date']
             dateBegin = findDateNCandlesBeforeDate(timeframe, dateEnd, init.candlesToLoadwithVerticalLine, "<")
@@ -938,7 +989,6 @@ def loadNewData(relayout_data):
             dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
 
             if dateEnd > data.iloc[-1]['Date'].strftime('%Y-%m-%d %H:%M:%S'):
-                print("load to too far")
                 return dash.no_update
 
             mask = (data['Date'] < dateBegin) | (data['Date'] > dateEnd)
@@ -959,7 +1009,7 @@ def loadNewData(relayout_data):
         for shape in fig1["layout"]["shapes"]:
             fig.add_shape(shape)
 
-        # global_result = makeAdjustedRelayout(relayout_data)
+        global_result = makeAdjustedRelayout(relayout_data)
 
         if 'xaxis.range[0]' in global_result:
             fig['layout']['xaxis']['range'] = [
@@ -1028,7 +1078,7 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
         # add to the chart rectangle which has one corner in close of the clicked candle and the other corner in the close of the next candle
         # checking argument "value" if long then adding long position shape else adding short position shape
         if not occupiedCandle[point_index]:
-
+            endOfShape = 0
             if point_index + 24 > len(data.index) - 1:
                 endOfShape = len(data.index) - 1
             else:
@@ -1125,14 +1175,10 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
                 }
 
             # print(fig['layout']['shapes'])
-            print(clickData, "adasd")
 
-            print(type(clicked_candle['Date']))
-            print(clicked_candle['Date'])
             addRRRatioAnnotation(fig, clicked_candle['Close'], clicked_candle['Date'],
-                                  data.iloc[point_index + 24]['Date'], newPos['stopLoss'],
+                                  data.iloc[endOfShape]['Date'], newPos['stopLoss'],
                                     newPos['takeProfit'])
-            print("kuuurwa")
             # print(fig['layout']['annotations'])
 
             firstWasChangedShape = True
@@ -1152,6 +1198,7 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
     if relayout_data:
 
         if ctx.triggered[0]['prop_id'] == 'refresh-button.n_clicks':
+            print("refreshed@@@@@@@")
             listOfPositions = []
             prevCapital = startCapital
             equity_values = [startCapital]
@@ -1182,7 +1229,7 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
         fig1 = copy.deepcopy(fig)
         # print(isChangedShape(relayout_data))
         # print(relayout_data)
-        global_result = makeAdjustedRelayout(relayout_data)
+        global_result = makeAdjustedRelayout(fig, relayout_data)
 
         if 'xaxis.range[0]' in global_result:
             fig1['layout']['xaxis']['range'] = [
@@ -1228,8 +1275,7 @@ def changeNameOfAnnotation(fig, entryDate, newName):
 
 def deleteAllRRRatioAnnotations(fig):
     annotations_list = list(fig['layout']['annotations'])
-    print(annotations_list)
-    print(len(annotations_list))
+
 
     newListOfAnnotations = []
     for annotation in annotations_list:
@@ -1239,8 +1285,7 @@ def deleteAllRRRatioAnnotations(fig):
             # annotations_list.remove(annotation)
 
 
-    print("£££")
-    print(annotations_list)
+
     fig['layout']['annotations'] = newListOfAnnotations
 
 

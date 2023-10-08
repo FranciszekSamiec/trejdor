@@ -32,10 +32,10 @@ body {
     color: white;
     background-color: #323738;
     border-top: none;
-    border-right: 0.1px solid blue;
+    border-right: 0.8px solid blue;
     border-bottom: 0.1px solid blue;
     border-left: 0.1px solid blue;
-
+    /* border-width: 3; */
     /* border: 0.1px solid blue; */
     font: 1em sans-serif;
     position: relative;
@@ -51,7 +51,10 @@ body {
 
 .is-open>.Select-control {
     background: #323738;
-    border-color: blue;
+    /* border-color: blue; */
+    border-top: 2px solid blue;
+    border-right: 2px solid blue;
+    border-left: 2px solid blue;
 }
 
 .options {
@@ -60,7 +63,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: top;
-    gap: 20px;
+    gap: 8px;
     background-color: #131722;
     color: white;
     font: 1em sans-serif;
@@ -144,14 +147,19 @@ body {
     border-radius: 5px;
 }
 
-.options__percent-to-risk {
+/* .options__percent-to-risk {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 0px;
+} */
+
+.options__start-capital {
+    width: 200px;
 }
 
 .options__percent-to-risk-input {
-    width: fit-content;
+    /* width: fit-content; */
+    width: 70px;
 }
 
 .DayPickerNavigation_rightButton__horizontalDefault {
@@ -197,4 +205,41 @@ body {
     border-radius: 2px;
     cursor: grab;
     
+}
+
+.text-center {
+    display: table;
+    height: 100%;
+}
+
+.text-center p {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+/* .js-plotly-plot .plotly {
+    cursor: crosshair;
+} */
+
+.js-plotly-plot .plotly .cursor-move {
+    cursor: crosshair;
+}
+
+/* modebar options */
+
+
+.js-plotly-plot .plotly .modebar {
+
+    transform: translateX(-50%);
+    left: 78%;
+}
+
+
+.horizontal-line {
+    border-top: 1px solid rgba(36, 1, 232, 0.493); /* Add a single border
+    height: 2px; /* Adjust the height of the line as needed */
+    /* margin-top: 5px;
+    margin-bottom: 5px; */
+    margin-left: 25px;
+    margin-right: 25px; 
 }

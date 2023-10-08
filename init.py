@@ -171,7 +171,7 @@ def addArrowAnnotations(fig, xVal):
             hovertext="Double-click to load/hide candles",
             width=16,
             height=35,
-            opacity=1,
+            opacity=0.8,
         )
     )
     
@@ -195,7 +195,7 @@ def addArrowAnnotations(fig, xVal):
             hovertext="Double-cick to load/hide candles",
             width=16,
             height=35,
-            opacity=1,
+            opacity=0.8,
             yshift=45,
         )
     )
@@ -229,7 +229,7 @@ def addVertialLoaders(fig, data):
                 y = 0.5,
                 xref="x",
                 yref="paper",
-                showarrow=True,
+                showarrow=False,
                 arrowhead=2,
                 bgcolor="blue",
                 bordercolor="blue",
@@ -238,8 +238,8 @@ def addVertialLoaders(fig, data):
                 align="center",
                 # captureevents=True,
                 hovertext="Double-lick to hide candles",
-                width=25,
-                height=20,
+                width=16,
+                height=35,
                 opacity=0.8,
             )
         )
@@ -361,6 +361,17 @@ def initCandlestickChart(data):
         # },
         yaxis_title="",
         xaxis_title=" ",
+        legend = dict(
+            orientation="h",
+            # yanchor="bottom",
+            y=1.22,
+            # xanchor="right",
+            x=0.38,
+            bordercolor = "#323738",
+            borderwidth = 1.2,
+            xref = "paper",
+            yref = "paper",
+        ),
         
     )
     pio.templates.default = "plotly_dark"

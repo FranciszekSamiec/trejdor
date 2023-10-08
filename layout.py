@@ -5,17 +5,20 @@ from dash_dangerously_set_inner_html import DangerouslySetInnerHTML
 
 def createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info):
     app_layout = html.Div(
+
+        
         style={'background-color': '#323738', 'margin': '0'},
         children = [
             # html.Button('Click Me', id='button'),
-                
+
+
             html.Div([
                 dcc.Graph(
                     id='candlestick-chart' ,
                     figure=fig,
                     # animate=True,
-                    config={'displaylogo': False,'editable': True,'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': True}, # scroll in dash is fucked up 
-                    style={'displayModeBar': False, 'height': '62vh', 'position': 'relative'}  # Set the chart height as 90% of the viewport height
+                    config={'doubleClick': 'autosize', 'modeBarButtonsToRemove': ['resetScale2d'], 'displaylogo': False,'editable': True,'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': True}, # scroll in dash is fucked up 
+                    style={ 'height': '62vh', 'position': 'relative'}  # Set the chart height as 90% of the viewport height
                 ),
                 html.Div([
                     html.Div([
@@ -35,19 +38,41 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                             searchable=False,
                             style={'width': '70px'},
                         ),
+
                     ], style={'display': 'flex', 'flexDirection': 'row'}),
                 ], style={'padding': '10px', 'position': 'absolute', 'top': '10px', 'left': '10px'}),
-
+                html.Div(
+                    children=[
+                        html.Div(
+                            "T  r  e  y  d  o  r (Alpha)",
+                            className='text-center',  # Apply the CSS class
+                            style={
+                                'color': '#e384c3',
+                                'font-size': '16px',
+                                'font-family': 'Courier New',
+                                'font-weight': 'normal',
+                                'font-style': 'italic',
+                                'display': 'flex',  # Use Flexbox
+                                'justify-content': 'center',  # Center horizontally
+                                'align-items': 'center',  # Center vertically
+                                'height': '20px',  # Match the height of the parent div
+                            }
+                        ),
+                    ],
+                    id='text-frame',
+                    style={'padding': '10px', 'position': 'absolute', 'top': '18px', 'right': '18px', 'border': '1px solid blue', 'border-radius': '5px'}
+                    # style={'background-color': '#323738', 'padding-left': '10px', 'padding-right': '10px' ,'border-radius': '5px', 'margin-left': '10px',
+                    #     'border': '1px solid blue'},
+                ),
             ], style={'padding': '5px'}),
             html.Div([
                 html.Div([
                     html.Div(
                         id='error',
                         style={'color':'#42c8f5'},
-                        children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML(),
-                        # children=info,
+                        children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML("control panel"),
                     ),
-                    # html.Div(id='error', style={'color':'green'}, children="Default Text"),
+                    html.Div(className='horizontal-line'),
                     html.Div(
                         [
                             dcc.DatePickerSingle(
@@ -65,6 +90,7 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                         ],
                         className='options__dates'
                     ),
+                    html.Div(className='horizontal-line'),
                     dcc.RadioItems(
                         [
                             {
@@ -81,15 +107,30 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                         inline=False,
                         className='options__position-radio',
                     ),
+                    html.Div(className='horizontal-line'),
+
                     html.Div(
                         [
-                            html.Label('Percent to risk', htmlFor='text-input'),
+                            html.Label('Percent to risk: ', htmlFor='text-input'),
                             # <input type="number" min="0" max="1" step="0.01" id="myPercent"/>
-                            dcc.Input(id='options-percent-to-risk', placeholder = '%', type='number', min=0, max=100, step=0.1, className='options__percent-to-risk-input',style={'cursor': 'pointer', 'color': 'white'}),
+                            dcc.Input(id='options-percent-to-risk', placeholder = '2%', type='number', min=0, max=100, step=0.1, className='options__percent-to-risk-input',style={'cursor': 'pointer', 'color': 'white'}),
                             # dcc.Input(id='text-input', type='text', value=''),
                         ],
                         className="options__percent-to-risk"
                     ),
+                    html.Div(className='horizontal-line'),
+
+                    html.Div(
+                        [
+                            html.Label('Start Capital: ', htmlFor='text-input'),
+                            # <input type="number" min="0" max="1" step="0.01" id="myPercent"/>
+                            dcc.Input(id='start-capital', placeholder = '100 000', type='number', min=0, max=100, step=0.1, className='options__percent-to-risk-input',style={'cursor': 'pointer', 'color': 'white'}),
+                            # dcc.Input(id='text-input', type='text', value=''),
+                        ],
+                        className="options__start-capital"
+                    ),
+                    html.Div(className='horizontal-line'),
+
                     html.Button('Reset', id='refresh-button', className='options__reset-button', n_clicks=0, style={'cursor': 'pointer'}),
                     html.Div([
                         html.P(id='click-output', hidden=True),

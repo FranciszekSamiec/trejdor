@@ -202,7 +202,7 @@ def updateData(pair, timeframe):
     latest_timestamp = lastOfPair # Initialize the latest timestamp as None
 
     while True:
-        print("...")
+        # print("...")
         # translation to binance format, cannot be asigned to the same variable 
         # because it is later reused so it hs to be unchanged
         pairBinance = symbolTranslation.get(pair)
