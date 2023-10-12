@@ -6,6 +6,7 @@ from init import *
 from layout import createLayout
 from eqChart import *
 from api import *
+import api # same story as with init - to change global variables in api
 
 # pydatetime deprecated warning, not a problem for now
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -66,6 +67,7 @@ numOfCandlesToLoad = 2000
 endDate = current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 beginDate = findDateNCandlesBeforeDate(timeframe, endDate, numOfCandlesToLoad, "<")
 
+
 app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
@@ -78,6 +80,7 @@ app = dash.Dash(__name__)
 
 data = makeDataFrame(selected_option, selected_frequency , beginDate, endDate)
 
+# print(data)
 
 occupiedCandle = [False] * len(data.index)
 fig = initCandlestickChart(data)
@@ -91,7 +94,7 @@ occupiedCandle = [False] * len(data.index)
 
 info = availableRange(selected_option, selected_frequency)
 # Define the layout of the app (in the layout.py file)
-app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info)
+app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, "")
 #-------------------------------------------------------------- INITIALIZATION
 
 
@@ -130,6 +133,9 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
     
     x = indexOfEntryCandle + 1
 
+    print(endPrice, "endPrice ", entryPrice, "entryPrice ", stopLoss, " stopLoss", takeProfit, " takeProfit")
+
+
 
     while x < len(data.index) - 1 and x < indexOfEntryCandle + 24:
 
@@ -137,7 +143,13 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
         if direction == 'long position':
     
             if data.iloc[x]['High'] >= takeProfit or data.iloc[x]['Low'] <= stopLoss:
-                endPrice = data.iloc[x]['Close']
+                # endPrice = data.iloc[x]['Close']
+                if data.iloc[x]['High'] >= takeProfit:
+                    endPrice = takeProfit
+                elif data.iloc[x]['Low'] <= stopLoss:
+                    endPrice = stopLoss
+
+                print("ebebe")
                 break
         else:
             if data.iloc[x]['High'] >= stopLoss or data.iloc[x]['Low'] <= takeProfit:
@@ -147,17 +159,17 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
 
     # print(x)
 
-    if x < indexOfEntryCandle + 24:
-        if direction == 'long position':
-            if data.iloc[x]['Low'] <= stopLoss:
-                endPrice = data.iloc[x]['Low']
-            elif data.iloc[x]['High'] >= takeProfit:
-                endPrice = data.iloc[x]['High']
-        else:
-            if data.iloc[x]['High'] >= stopLoss:
-                endPrice = data.iloc[x]['High']
-            elif data.iloc[x]['Low'] <= takeProfit:
-                endPrice = data.iloc[x]['Low']
+    # if x < indexOfEntryCandle + 24:
+    #     if direction == 'long position':
+    #         if data.iloc[x]['Low'] <= stopLoss:
+    #             endPrice = data.iloc[x]['Low']
+    #         elif data.iloc[x]['High'] >= takeProfit:
+    #             endPrice = data.iloc[x]['High']
+    #     else:
+    #         if data.iloc[x]['High'] >= stopLoss:
+    #             endPrice = data.iloc[x]['High']
+    #         elif data.iloc[x]['Low'] <= takeProfit:
+    #             endPrice = data.iloc[x]['Low']
 
 
     result = 0
@@ -376,7 +388,7 @@ def changeFrequency(selected_frequency):
  
     resultOfLoad = loadTicker(selected_option, selected_frequency, beginDate, endDate)
     if resultOfLoad.empty:
-        return dash.no_update, 'frequency not available'
+        return dash.no_update, 'data not available'
     else:
         data = resultOfLoad
 
@@ -706,7 +718,7 @@ def isChangedZoom(relayout_data):
     return first_key.startswith('xaxis.range')
 
 def isAutoSized(relayout_data):
-    print(relayout_data)
+    # print(relayout_data)
     first_key = getFirstKeyOfRelayoutData(relayout_data)
 
     return first_key.startswith('xaxis.autorange')
@@ -734,7 +746,7 @@ def autoRangeRelayout():
     startDate = data.iloc[0]['Date']
     endDate = data.iloc[len(data.index) - 1]['Date']
 
-    print(startDate, " <<<<>>>> ", endDate)
+    # print(startDate, " <<<<>>>> ", endDate)
 
     maxVal = data['High'].max()
     minVal = data['Low'].min()
@@ -824,7 +836,7 @@ def makeAdjustedRelayout(fig, relayout_data):
     # if autorange return relayout_data and do not proceed
   
     if isAutoSized(relayout_data):
-        print("gggurba")
+        # print("gggurba")
         return autoRangeRelayout()   
     
     if not isChangedZoom(relayout_data):
@@ -840,11 +852,11 @@ def makeAdjustedRelayout(fig, relayout_data):
     # print("#####")
     # print(end)
     # print(endIndex)
-    print(start, end, "%")
+    # print(start, end, "%")
     startIndex = getIndexFromDate(start)
     endIndex = getIndexFromDate(end)
 
-    print(startIndex, endIndex, "$$$$$$$")
+    # print(startIndex, endIndex, "$$$$$$$")
     minMax = findMinMaxValues(startIndex, endIndex)
 
     margin = calculateTopBottomMargin(minMax[0], minMax[1])
@@ -1009,7 +1021,7 @@ def loadNewData(relayout_data):
         for shape in fig1["layout"]["shapes"]:
             fig.add_shape(shape)
 
-        global_result = makeAdjustedRelayout(relayout_data)
+        global_result = makeAdjustedRelayout(fig, relayout_data)
 
         if 'xaxis.range[0]' in global_result:
             fig['layout']['xaxis']['range'] = [
@@ -1023,6 +1035,9 @@ def loadNewData(relayout_data):
                 global_result['yaxis.range[1]']
             ]
 
+        fig.update_layout(
+            dragmode = 'pan',
+        )
 
         return fig
 
@@ -1198,7 +1213,6 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
     if relayout_data:
 
         if ctx.triggered[0]['prop_id'] == 'refresh-button.n_clicks':
-            print("refreshed@@@@@@@")
             listOfPositions = []
             prevCapital = startCapital
             equity_values = [startCapital]
@@ -1279,7 +1293,6 @@ def deleteAllRRRatioAnnotations(fig):
 
     newListOfAnnotations = []
     for annotation in annotations_list:
-        print(annotation['name'], " ", annotation)
         if annotation['name'] == None:
             newListOfAnnotations.append(annotation)
             # annotations_list.remove(annotation)
@@ -1349,7 +1362,75 @@ def addRRRatioAnnotation(fig, entryPrice, entryDate, endDate, stopLoss, takeProf
     )
 
 
+@app.callback(
+    Output('dummyOutNewPairSearch', 'children', allow_duplicate=True),
+    Output('new-pair-info', 'children', allow_duplicate=True),
+    Output('new-pair-info', 'style', allow_duplicate=True),
+    Input('new-pair', 'value'),
+    prevent_initial_call=True,
+)
+def printSearching(value):
+    print(value)
+    if value == "":
+        return dash.no_update, dash.no_update, dash.no_update
+    else:
+        return value, "searching...", {'color': '#42c8f5',
+                                        'max-width': '100px',
+                                        'overflow-y': 'auto',
+                                        'font-family': 'sans-serif',
+
+                                        }
+
+@app.callback(
+    # Output('plusMinusButton', 'children', allow_duplicate=True),
+    Output('new-pair-info', 'children', allow_duplicate=True),
+    Output('new-pair-info', 'style', allow_duplicate=True),
+    Input('dummyOutNewPairSearch', 'children'),
+    State('new-pair', 'value'),
+    prevent_initial_call=True,
+) 
+def readNewPairInput(dummyTrigger ,newPairInput):
+    print(newPairInput)
+    # newPair = newPairInput
+
+    if isSymbolListedOnBinance(newPairInput):
+        print("jest")
+        return "symbol available", {'color': '#42c8f5',
+                                        'max-width': '80px',
+                                        'overflow-y': 'auto',
+                                        'font-family': 'sans-serif',
+
+                                        }
+    else:
+        print("nie ma")
+
+        return "symbol not available", {'color': 'orange',
+                                        'max-width': '80px',
+                                        'overflow-y': 'auto',
+                                        'font-family': 'sans-serif',
+
+                                        }
+
+
+
+
+
+
+
+
+
+# @app.callback(
+#     Output('plusMinusButton', 'children', allow_duplicate=True),
+#     Input('plus-button', 'n_clicks'),
+#     Input('minus-button', 'n_clicks'),
+#     prevent_initial_call=True,
+# )
+# def addDeletePairs(plus_clicks, minus_clicks):
+#     print("cipa")
+#     print(plus_clicks)
+#     return dash.no_update
 
 if __name__ == '__main__':
     app.run_server(debug = True, host="127.0.0.1", port="8050")
+
 

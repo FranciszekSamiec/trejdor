@@ -58,17 +58,21 @@ def makeDataFrame(symbol, timeframe, beginDate, endDate):
     colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
     
     output_folder = './months/' + symbol + '/'
+    print(output_folder)
     csv_file = f'{output_folder}{symbol}-{timeframe}.csv'
     # Read the entire CSV file into a DataFrame
     df = pd.read_csv(csv_file, names=colnames, header=0)
-    
+    print(df)
     # Convert the 'Date' column to datetime objects
     df['Date'] = pd.to_datetime(df['Date'])
     
     # Filter the DataFrame based on the specified date range
+    print(beginDate)
+    print(endDate)
+
     mask = (df['Date'] >= beginDate) & (df['Date'] <= endDate)
     filtered_df = df.loc[mask]
-    
+    print(filtered_df)
     return filtered_df
 
 
@@ -372,7 +376,7 @@ def initCandlestickChart(data):
             xref = "paper",
             yref = "paper",
         ),
-        
+        dragmode = 'pan',
     )
     pio.templates.default = "plotly_dark"
 

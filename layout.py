@@ -3,7 +3,7 @@ from dash_dangerously_set_inner_html import DangerouslySetInnerHTML
 
 
 
-def createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info):
+def createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, pairInfo):
     app_layout = html.Div(
 
         
@@ -17,7 +17,8 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                     id='candlestick-chart' ,
                     figure=fig,
                     # animate=True,
-                    config={'doubleClick': 'autosize', 'modeBarButtonsToRemove': ['resetScale2d'], 'displaylogo': False,'editable': True,'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': True}, # scroll in dash is fucked up 
+                    config={'doubleClick': 'autosize', 'modeBarButtonsToRemove': ['resetScale2d'], 'displaylogo': False,'editable': True,
+                            'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': True}, # scroll in dash is fucked up 
                     style={ 'height': '62vh', 'position': 'relative'}  # Set the chart height as 90% of the viewport height
                 ),
                 html.Div([
@@ -27,9 +28,41 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                             options=[{'label': option, 'value': option} for option in options],
                             value=selected_option,
                             className='my-dropdown',
-                            searchable=False,
-                            style={'width': '155px', 'margin-right': '10px'},
+                            searchable=True, 
+                            style={'width': '155px', 'margin-right': '5px'},
                         ),
+
+                        html.Div([
+                            dcc.Input(
+                                id='new-pair',
+                                type='text',
+                                className="new-pair",
+                                placeholder='add new symbol',
+                            ),
+                            html.Div(
+                                id='new-pair-info',
+                                # children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML(pairInfo),
+                            ),
+                        ], style={'display': 'flex', 'flexDirection': 'column'}),  # This will arrange them vertically
+
+                        # html.Div([
+                        #     dcc.Input(
+                        #         id='new-pair',
+                        #         type='text',
+                        #         className="new-pair",
+                        #         placeholder='add new symbol',
+                        #     ),       
+                        # ]),
+                        # html.Div(
+                        #     id='new-pair-info',
+                        #     style={'color':'#42c8f5'},
+                        #     children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML(pairInfo),
+                        # ),
+
+                        html.Div([
+                            html.Button("+", id="plus-button", n_clicks=0, className="plus-button"),
+                            html.Button("-", id="minus-button", n_clicks=0, className="minus-button"),
+                        ]),
                         dcc.Dropdown(
                             id='frequency-dropdown',
                             options=[{'label': label, 'value': value} for value, label in frequency_options.items()],
@@ -139,6 +172,8 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                         html.P(id='dummyOutNewPos', hidden=True),
                         html.P(id='dummyOutNewPair', hidden=True),
                         html.P(id='dummyOutAnnotation', hidden=True),
+                        html.P(id='plusMinusButton', hidden=True),
+                        html.P(id='dummyOutNewPairSearch', hidden=True),
                     ], style={'display': 'none'}),
 
                 ],

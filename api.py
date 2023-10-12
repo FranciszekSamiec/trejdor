@@ -24,6 +24,7 @@ symbolTranslation = {
 }
 
 
+
 binance = ccxt.binance({
     'rateLimit': 1200,  # Adjust the rate limit as needed
 })
@@ -47,7 +48,7 @@ def parseSymbol(symbol):
 def download_historical_data(startDate, symbol, timeframe):
     # start_date = pd.to_datetime("2023-01-01 00:00:00")
 
-    
+    print("startDate", startDate)
 
     start_date = datetime.strptime(startDate, '%Y-%m-%d %H:%M:%S')
 
@@ -56,6 +57,7 @@ def download_historical_data(startDate, symbol, timeframe):
     start_date = start_date.astimezone(pytz.UTC)
     start_date = start_date.astimezone(pytz.UTC).replace(tzinfo=None)
 
+    print("startDate2", startDate)
 
 
     # start_date = pd.to_datetime(startDate)
@@ -69,6 +71,16 @@ def download_historical_data(startDate, symbol, timeframe):
         symbolBinance = symbolTranslation.get(symbol)
         candles = binance.fetch_ohlcv(symbolBinance, timeframe, since=since, limit=1000)
 
+
+        # Check rate limit headers in the response
+        # limit = binance.response.headers.get('x-ratelimit-limit')
+        # remaining = binance.response.headers.get('x-ratelimit-remaining')
+        # reset_time = binance.response.headers.get('x-ratelimit-resettime')
+
+
+        # print(f"Rate Limit: {limit}")
+        # print(f"Remaining Requests: {remaining}")
+        # print(f"Reset Time (Unix Timestamp): {reset_time}")
         if candles:
             df = pd.DataFrame(candles, columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
             df['Date'] = pd.to_datetime(df['Date'], unit='ms')
@@ -143,7 +155,6 @@ def checkIfUpToDate(pair, timeframe):
     
 # if 
 def returnLastDate(pair, timeframe):
-    global ultimateBeginDate
 
     # Get the current time
     current_time = datetime.now()
@@ -170,6 +181,7 @@ def returnLastDate(pair, timeframe):
     
     if not len(pairDf) == 0:
         lastOfPair = pairDf.iloc[-1]['Date']
+        print("lastOfPair", lastOfPair, " ", pair, " ", timeframe)
     else:
         return target_date_str
 
@@ -179,9 +191,9 @@ def returnLastDate(pair, timeframe):
 
 def handleDataLoading(pair, timeframe):
     if checkIfUpToDate(pair, timeframe):
-        print("Data is up to date")
+        print("Data is up to date", pair, timeframe)
     else:
-        print("Updating data")
+        print("Updating data", pair, timeframe)
         download_historical_data(returnLastDate(pair, timeframe), pair, timeframe)
 
     updateData(pair, timeframe)
@@ -254,27 +266,7 @@ def findDateNCandlesBeforeDate(timeframe, date, candlesToLoad, direction):
 
 
 
-# def create_data_folders_and_files(app_data, root_folder='./months'):
-#     symbols = app_data['symbols']
-#     timeframes = app_data['timeframes']
 
-#     # Create the root folder if it doesn't exist
-#     os.makedirs(root_folder, exist_ok=True)
-
-#     # Create subfolders for each symbol
-#     for symbol in symbols:
-#         symbol_folder = os.path.join(root_folder, symbol)
-#         os.makedirs(symbol_folder, exist_ok=True)
-
-#         # Create files for each timeframe inside the symbol folder
-#         for timeframe in timeframes:
-#             filename = f'{symbol}-{timeframe}.csv'
-#             file_path = os.path.join(symbol_folder, filename)
-
-#             # Create an empty CSV file if it doesn't exist
-#             if not os.path.exists(file_path):
-#                 with open(file_path, 'w'):
-#                     pass
 
 
 def create_data_folders_and_files(app_data, root_folder='./months'):
@@ -297,11 +289,10 @@ def create_data_folders_and_files(app_data, root_folder='./months'):
 
             filename = f'{symbol}-{timeframe}.csv'
             file_path = os.path.join(symbol_folder, filename)
-            print(file_path)
             # Create an empty CSV file with column names if it doesn't exist
-            
-            df = pd.DataFrame(columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
-            df.to_csv(file_path, index=False)
+            if not os.path.exists(file_path):
+                df = pd.DataFrame(columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+                df.to_csv(file_path, index=False)
 
 # function to load data for all pairs and timeframes
 def handleLoadingOfAllPairsAndTimeframes(app_data):
@@ -312,18 +303,31 @@ def handleLoadingOfAllPairsAndTimeframes(app_data):
     threads = []
     for symbol in symbols:
         for timeframe in timeframes:
-            print(symbol, " || " ,timeframe)
+            # print(symbol, " || " ,timeframe)
             thread = threading.Thread(target=handleDataLoading, args=(symbol, timeframe))
             # thread.setDaemon(True)
             threads.append(thread)
             thread.start()
 
+def isSymbolListedOnBinance(symbol):
+    exchange = ccxt.binance()
 
-# create_data_folders_and_files(app_data)
+    # Get the list of trading pairs (symbols) on Binance
+    exchange_symbols = exchange.load_markets()
+
+# Check if the symbol exists in the list of trading pairs
+    if symbol in exchange_symbols:
+        # print(f"{symbol} is listed on Binance.")
+        return True
+    else:
+        return False
+        # print(f"{symbol} is not listed on Binance.")
+
+
+
+create_data_folders_and_files(app_data)
 
 # handleLoadingOfAllPairsAndTimeframes(app_data)
-
-# exchange = ccxt.binance()
 
 
 # # Fetch the list of trading pairs (symbols)
