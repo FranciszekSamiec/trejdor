@@ -33,8 +33,20 @@ Welcome to the Treydor App repository! This is a Python Dash application that al
 
 ## `Usage` 📖
 
+![Screenshot 2023-10-17 at 17 27 42](https://github.com/FranciszekSamiec/trejdor/assets/49732831/accdc9d5-5791-4cf3-b17d-b07ae565c9a9)
+1. This is the symbol and timeframe menu. Here you can also add or delete symbols from the app's menuu. Symbols are downloaded from binance exchange. this allows user tocontrol memory usage of ohlc data.
+2. Indicator menu depicts indicators that are currently added to the chart. Tt allows user to switch them on/off. Later comprehensive indicator base will be added.
+3. vertical loader line allows user to load/hide data. Annotation on the bottom says how many candles user wants to hide/load. User can set this number by clicking on the annotation and changing the number. If the data is loaded up to the present, it will be indicated by the vertical dashed line with only one arrow pointing left.
+4. This is the control panel, it allows user to:
+   - set specific date range to depict,
+   - choose direction of the position to be set,
+   - enter the percent willing to risk at each trade,
+   - set start capital,
+   - reset all trading history,
+5. This is equity chart, it depicts history of the equity and drawdown as a blue histogram attached to ceiling. 
 
-
+User can set open position by simply clicking on the candle at which he wants to enter the market. User can click and drag the odges of the position rectangle and app will automatically adjust equity chart to changes in long/short position. 
+   
 ## `Roadmap` 🛣️
 
 Here's what we have in store for the future of the Trading App:
