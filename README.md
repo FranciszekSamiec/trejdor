@@ -55,7 +55,7 @@ Here's what we have in store for the future of the Trading App:
 - 📈 Advanced ML Features: Implement econometric models like ARIMA, SARIMA for forecasting.
 - 📊 More Indicators: Expand the set of technical indicators for analysis.
 - 🌐 Multiple Exchanges: Extend the app's support to different cryptocurrency markets.
-- 💡 Your Ideas: We welcome your suggestions and contributions to enhance the app.
+- 💡 Make app more respnsive by using javascript.
 
 
 ## `License` 📜
