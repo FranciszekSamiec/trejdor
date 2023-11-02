@@ -107,7 +107,7 @@ def loadTicker(symbol, timeframe, dateBegin, dateEnd):
 def checkIfUpToDate(data, timeframe):
     lastDate = pd.to_datetime(data.iloc[-1]['Date'])
 
-    today = datetime.today()
+    today = datetime.utcnow()
     if timeframe == "1m":
         truncated_date = lastDate.replace(second=0, microsecond=0)
         truncated_today = today.replace(second=0, microsecond=0)
@@ -241,11 +241,15 @@ def addVertialLoaders(fig, data):
                 font=dict(size=12, color="white"),
                 align="center",
                 # captureevents=True,
-                hovertext="Double-lick to hide candles",
+                hovertext="Double-click to hide candles",
                 width=16,
                 height=35,
                 opacity=0.8,
             )
+        )
+        fig.add_annotation(
+            name = "dummy",
+            visible=False,
         )
     else:
 
@@ -346,13 +350,15 @@ def initCandlestickChart(data):
                                         high=data['High'],
                                         low=data['Low'],
                                         close=data['Close'],
-                                        name='ohlc',)],
+                                        name='ohlc',
+                                        hoverinfo='y',)],
                                         )
     fig.update_layout(template=custom_theme)
 
     # # Add custom layout
     fig.update_layout(
         title="",
+        hovermode="y",
         xaxis_rangeslider_visible=False,
         yaxis_autorange=False,
         # this is very interesting, it causes problems with scrolling zoom
@@ -393,7 +399,7 @@ def initCandlestickChart(data):
         showspikes=True,
         spikecolor="grey",
         spikesnap="cursor",
-        spikemode="across",
+        spikemode="toaxis+across+marker",
         spikedash="dash",
         spikethickness=0.7
     )

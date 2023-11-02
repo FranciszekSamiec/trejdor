@@ -45,20 +45,6 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                             ),
                         ], style={'display': 'flex', 'flexDirection': 'column'}),  # This will arrange them vertically
 
-                        # html.Div([
-                        #     dcc.Input(
-                        #         id='new-pair',
-                        #         type='text',
-                        #         className="new-pair",
-                        #         placeholder='add new symbol',
-                        #     ),       
-                        # ]),
-                        # html.Div(
-                        #     id='new-pair-info',
-                        #     style={'color':'#42c8f5'},
-                        #     children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML(pairInfo),
-                        # ),
-
                         html.Div([
                             html.Button("+", id="plus-button", n_clicks=0, className="plus-button"),
                             html.Button("-", id="minus-button", n_clicks=0, className="minus-button"),
@@ -101,8 +87,8 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
             html.Div([
                 html.Div([
                     html.Div(
-                        id='error',
-                        style={'color':'#42c8f5'},
+                        id='control-panel',
+                        style={'color': '#42c8f5', 'margin': '2px', 'text-align': 'center'},
                         children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML("control panel"),
                     ),
                     html.Div(className='horizontal-line'),

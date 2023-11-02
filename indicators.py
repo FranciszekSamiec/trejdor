@@ -133,7 +133,8 @@ def addIndicator(dataFrame, fig, indicatorSeries, nameOfIndicator, colorOfIndica
         y=indicatorSeries,
         mode='lines',
         line=dict(color=colorOfIndicator, width=0.7),
-        name=nameOfIndicator
+        name=nameOfIndicator,
+        hoverinfo='skip'
     ))
 
 # only indicators line like - not volume

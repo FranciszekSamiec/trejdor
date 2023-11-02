@@ -64,7 +64,7 @@ numOfCandlesToLoad = 2000
 # every pair is current date - 2000 candles of whatever timeframe
 # when new pair is loaded or timefram i changed 
 # this will be the range for the new data
-endDate = current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+endDate = current_date_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 beginDate = findDateNCandlesBeforeDate(timeframe, endDate, numOfCandlesToLoad, "<")
 
 
@@ -133,7 +133,7 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
     
     x = indexOfEntryCandle + 1
 
-    print(endPrice, "endPrice ", entryPrice, "entryPrice ", stopLoss, " stopLoss", takeProfit, " takeProfit")
+    # print(endPrice, "endPrice ", entryPrice, "entryPrice ", stopLoss, " stopLoss", takeProfit, " takeProfit")
 
 
 
@@ -156,20 +156,6 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
                 endPrice = data.iloc[x]['Close']
                 break
         x = x + 1
-
-    # print(x)
-
-    # if x < indexOfEntryCandle + 24:
-    #     if direction == 'long position':
-    #         if data.iloc[x]['Low'] <= stopLoss:
-    #             endPrice = data.iloc[x]['Low']
-    #         elif data.iloc[x]['High'] >= takeProfit:
-    #             endPrice = data.iloc[x]['High']
-    #     else:
-    #         if data.iloc[x]['High'] >= stopLoss:
-    #             endPrice = data.iloc[x]['High']
-    #         elif data.iloc[x]['Low'] <= takeProfit:
-    #             endPrice = data.iloc[x]['Low']
 
 
     result = 0
@@ -214,6 +200,7 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
             elif endPrice > entryPrice:
                 result = (losingPerc) * tradeCapital * (-1)
 
+    print(result, "result")
 
     return result
         
@@ -327,7 +314,6 @@ def makeRedLine(redTraceY, redTraceX, updated_fig_relay):
 
 @app.callback(
     Output('candlestick-chart', 'figure', allow_duplicate=True), 
-    Output('error', 'children'), 
     Input('dateStart', 'date'),
     Input('dateEnd', 'date'),
     prevent_initial_call=True
@@ -343,12 +329,12 @@ def changeDateRange(start_date, end_date):
 
 
     if start_date is None or end_date is None:
-        return dash.no_update, ''
+        return dash.no_update
     
  
     resultOfLoad = loadTicker(selected_option, selected_frequency, start_date, end_date)
     if resultOfLoad.empty:
-        return dash.no_update, 'range not available'
+        return dash.no_update
     else:
         data = resultOfLoad
 
@@ -363,11 +349,10 @@ def changeDateRange(start_date, end_date):
     equity_values = [startCapital]
     equity_chart_fig = initEquityChart(equity_values)
 
-    return fig, ''
+    return fig
 
 @app.callback(
     Output('candlestick-chart', 'figure', allow_duplicate=True), 
-    Output('error', 'children', allow_duplicate=True), 
     Input('frequency-dropdown', 'value'),
     prevent_initial_call=True
 )
@@ -382,13 +367,13 @@ def changeFrequency(selected_frequency):
     # global beginDate
 
     if selected_frequency is None:
-        return dash.no_update, ''
+        return dash.no_update
 
     beginDate = findDateNCandlesBeforeDate(selected_frequency, endDate, numOfCandlesToLoad, "<")
  
     resultOfLoad = loadTicker(selected_option, selected_frequency, beginDate, endDate)
     if resultOfLoad.empty:
-        return dash.no_update, 'data not available'
+        return dash.no_update
     else:
         data = resultOfLoad
 
@@ -403,12 +388,11 @@ def changeFrequency(selected_frequency):
     equity_chart_fig = initEquityChart(equity_values)
 
     timeframe = selected_frequency
-    return fig, ''
+    return fig
 
 @app.callback(
     Output('candlestick-chart', 'figure', allow_duplicate=True),
     Output('equity-chart', 'figure', allow_duplicate=True), 
-    Output('error', 'children', allow_duplicate=True),  
     Input('chart-title-dropdown', 'value'),
     prevent_initial_call=True
       # Input from the dropdown menu
@@ -429,7 +413,7 @@ def changePair(selected_option):
 
     resultOfLoad = loadTicker(selected_option, selected_frequency, beginDate, endDate)
     if isinstance(resultOfLoad, str):
-        return dash.no_update, dash.no_update, info
+        return dash.no_update, dash.no_update
     else:
         data = resultOfLoad
 
@@ -443,7 +427,7 @@ def changePair(selected_option):
     equity_values = [startCapital]
     equity_chart_fig = initEquityChart(equity_values)
 
-    return fig, equity_chart_fig, info
+    return fig, equity_chart_fig
     
 
 
@@ -492,8 +476,8 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
         elif key.endswith('x0'):
             x0 = val
 
-    x0 = round_to_nearest_hour(x0)  
-    x1 = round_to_nearest_hour(x1)
+    x0 = roundDate(x0)  
+    x1 = roundDate(x1)
 
 
     listOfPositions[-1]['entryDate'] = x0
@@ -537,8 +521,19 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
 
     return updated_fig_relay
 
+def roundDate(date):
+    if timeframe == '1m':
+        result = roundDateToMinute(date)
+    elif timeframe == '1h':
+        result = roundDateToHour(date)
+    elif timeframe == '1d':
+        result = roundDateToDay(date)
+    elif timeframe == '1w':
+        result = roundDateToWeek(date)
 
-def round_to_nearest_hour(date_str):
+    return result
+
+def roundDateToHour(date_str):
 
     input_date = parser.parse(date_str)
 
@@ -560,7 +555,39 @@ def round_to_nearest_hour(date_str):
 
     return rounded_date  # Return the datetime object
 
+def roundDateToMinute(date):
+    
+    input_date = parser.parse(date)
+    seconds = input_date.second
+    seconds_to_round = (60 - seconds) if seconds >= 30 else -seconds
+    rounding_delta = timedelta(seconds=seconds_to_round)
+    rounded_date = input_date + rounding_delta
+    rounded_date = rounded_date.replace(microsecond=0)
 
+    return rounded_date  # Return the datetime object
+
+def roundDateToDay(date):
+    input_date = parser.parse(date)
+    hours = input_date.hour
+    minutes = input_date.minute
+    seconds = input_date.second
+
+    hours_to_round = (24 - hours) if hours >= 12 else -hours
+    rounding_delta = timedelta(hours=hours_to_round)
+    rounded_date = input_date + rounding_delta
+    rounded_date = rounded_date.replace(minute=0, second=0, microsecond=0)
+
+    return rounded_date  # Return the datetime object
+
+def roundDateToWeek(date):
+    input_date = parser.parse(date)
+    weekday = input_date.weekday()
+    days_to_round = (7 - weekday) if weekday >= 3 else -weekday
+    rounding_delta = timedelta(days=days_to_round)
+    rounded_date = input_date + rounding_delta
+    rounded_date = rounded_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    return rounded_date  # Return the datetime object
 
 @app.callback(
     Output('dummyOut', 'children'),
@@ -587,7 +614,7 @@ def updateChart(relayout_data):
             
             if type(val) == str:
                 # val = roundDate(val)
-                val = round_to_nearest_hour(val)
+                val = roundDate(val)
 
 
             key_parts = key.split('.')
@@ -819,6 +846,9 @@ def getIndexFromDate(date):
             return index
 
 def findMinMaxValues(start, end):
+
+    # if start == end:
+    #     return [0,0]
     res = []
 
     subset_df = data.iloc[start:end + 1]
@@ -843,7 +873,6 @@ def makeAdjustedRelayout(fig, relayout_data):
         return global_result
 
 
-
     adjustedRel = {}
 
     dates = getDatesFromRelayoutData(relayout_data)
@@ -852,9 +881,12 @@ def makeAdjustedRelayout(fig, relayout_data):
     # print("#####")
     # print(end)
     # print(endIndex)
-    # print(start, end, "%")
+    print(start, end, "%")
     startIndex = getIndexFromDate(start)
     endIndex = getIndexFromDate(end)
+
+    if startIndex == endIndex:
+        return relayout_data
 
     # print(startIndex, endIndex, "$$$$$$$")
     minMax = findMinMaxValues(startIndex, endIndex)
@@ -867,6 +899,7 @@ def makeAdjustedRelayout(fig, relayout_data):
 
     filteredData = data.iloc[startIndex:endIndex]
 
+    # print(max(filteredData['Volume']))
     fig.update_layout(
         yaxis2_range=[0, max(filteredData['Volume']) * 2],
     )
@@ -882,7 +915,8 @@ def getDatesFromRelayoutData(relayout_data):
         # print(key)
 
         if type(val) == str:
-            val = round_to_nearest_hour(val)
+            # val = roundDate(val)
+            val = roundDate(val)
             datesRes.append(val)
 
     return datesRes
@@ -903,6 +937,13 @@ def getNumberOfCandlesfromAnnotation(relayout_data):
     return number 
 
 def whatKindOfAnnotation(relayout_data):
+
+    first_value = next(iter(relayout_data.values()))
+
+    # exception for dashed line when up to date, stupid af i know
+    if first_value == "←":
+        return "< right"
+
     # print(relayout_data)
     first_key = getFirstKeyOfRelayoutData(relayout_data)
     pattern = r'\[(\d+)\]'
@@ -945,6 +986,7 @@ def loadNewData(relayout_data):
     global occupiedCandle
     global timeframe
 
+    print(relayout_data)
 
     if not isClickedAnnotation(relayout_data):
         return dash.no_update
@@ -980,6 +1022,7 @@ def loadNewData(relayout_data):
             occupiedCandle = occupiedCandle[:-newLen]
             # newData = makeDataFrame(selected_option, selected_frequency, dateEnd, dateBegin)
         elif kindOfAnnotation == "num right":
+            print("good")
             init.candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
 
         elif kindOfAnnotation == "< left":
@@ -1374,7 +1417,7 @@ def printSearching(value):
     if value == "":
         return dash.no_update, dash.no_update, dash.no_update
     else:
-        return value, "searching...", {'color': '#42c8f5',
+        return value, "searching...", {'color': 'blue',
                                         'max-width': '100px',
                                         'overflow-y': 'auto',
                                         'font-family': 'sans-serif',
@@ -1416,18 +1459,67 @@ def readNewPairInput(dummyTrigger ,newPairInput):
 
 
 
+@app.callback(
+    # Output('plusMinusButton', 'children', allow_duplicate=True),
+    Output('chart-title-dropdown', 'options'),
+    Input('plus-button', 'n_clicks'),
+    Input('minus-button', 'n_clicks'),
+    State('new-pair-info', 'style'),
+    State('new-pair', 'value'),
+    prevent_initial_call=True,
+)
+def addDeletePairs(plus_clicks, minus_clicks, style, newPairInput):
+
+    triggered_input = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+
+    if newPairInput == "":
+        return dash.no_update
+
+    if not style:
+        return dash.no_update, dash.no_update
+    elif style['color'] == '#42c8f5':
+        print("blue")
+        if triggered_input == 'plus-button':
+            print("plus")
+            symbol = newPairInput.replace("/", "")
+            if not symbol in api.app_data['symbols']:
+                api.app_data['symbols'].append(symbol)
+                newPair = 'symbol', 'newPairInput'
+                api.symbolTranslation[newPair[0]] = newPair[1]
+                init.options.append(symbol)
+                
+                # check()
+
+            # return "added", init.options
+        elif triggered_input == 'minus-button':
+            print("minus--------")
 
 
 
-# @app.callback(
-#     Output('plusMinusButton', 'children', allow_duplicate=True),
-#     Input('plus-button', 'n_clicks'),
-#     Input('minus-button', 'n_clicks'),
-#     prevent_initial_call=True,
-# )
-# def addDeletePairs(plus_clicks, minus_clicks):
-#     print("cipa")
-#     print(plus_clicks)
+            symbol = newPairInput.replace("/", "")
+            if symbol in api.app_data['symbols']:
+                api.app_data['symbols'].remove(symbol)
+                newPair = 'symbol', 'newPairInput'
+                api.symbolTranslation.pop(newPair[0])
+                init.options.remove(symbol)
+                # check()
+            # return "deleted", init.options
+
+        api.create_data_folders_and_files(api.app_data)
+    return init.options
+    
+
+@app.callback(
+    Output('candlestick-chart', 'figure', allow_duplicate=True),
+    [Input('candlestick-chart', 'hoverData')],
+    prevent_initial_call=True,
+)
+def display_hover_data(hoverData):
+    print(hoverData)
+    return dash.no_update
+
+
+
 #     return dash.no_update
 
 if __name__ == '__main__':
