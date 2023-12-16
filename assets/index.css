@@ -63,11 +63,18 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: top;
-    gap: 8px;
+    gap: 7px;
     background-color: #131722;
     color: white;
     font: 1em sans-serif;
     /* width: 20%; */
+}
+
+.options__mode {
+    display: flex;
+    gap: 20px;
+    /* justify-content: center;
+    align-items: center;  */
 }
 
 .options__dates {
