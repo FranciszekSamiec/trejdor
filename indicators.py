@@ -89,7 +89,7 @@ def addVolume(data, fig):
 
     fig.add_trace(go.Bar(x=data['Date'], y=data['Volume'],
                      marker=dict(opacity = 0.4, color=colors, line=dict(width=0)),
-                     yaxis='y2', name='Volume'))
+                     yaxis='y2', name='Volume', hoverinfo='skip'))
     
     fig.update_layout(
         xaxis_title='Date',
@@ -128,6 +128,11 @@ def addIndicator(dataFrame, fig, indicatorSeries, nameOfIndicator, colorOfIndica
 
     dataFrame[nameOfIndicator] = indicatorSeries
 
+    if nameOfIndicator == "hh" or nameOfIndicator == "ll":
+        info = "y"
+    else:
+        info = "none"
+
     fig.add_trace(go.Scatter(
         x=dataFrame['Date'],
         y=indicatorSeries,
@@ -136,7 +141,7 @@ def addIndicator(dataFrame, fig, indicatorSeries, nameOfIndicator, colorOfIndica
         name=nameOfIndicator,
         hoverinfo='skip'
     ))
-
+# x y z text name, all none skip
 # only indicators line like - not volume
 def addIndicators(dataFrame, fig):
     for name, color in listOfIndicators.items():

@@ -4,18 +4,22 @@ from dash_dangerously_set_inner_html import DangerouslySetInnerHTML
 
 
 def createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, pairInfo):
-    app_layout = html.Div(
 
-        
+    app_layout = html.Div(
         style={'background-color': '#323738', 'margin': '0'},
+        # id='page-content',
+
         children = [
             # html.Button('Click Me', id='button'),
+            dcc.Location(id='url', refresh=False),
 
 
             html.Div([
+
                 dcc.Graph(
                     id='candlestick-chart' ,
                     figure=fig,
+                    clear_on_unhover=True,    
                     # animate=True,
                     config={'doubleClick': 'autosize', 'modeBarButtonsToRemove': ['resetScale2d'], 'displaylogo': False,'editable': True,
                             'edits': {'annotationPosition': False} , 'responsive': True,  'scrollZoom': True}, # scroll in dash is fucked up 
@@ -86,11 +90,26 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
             ], style={'padding': '5px'}),
             html.Div([
                 html.Div([
+
                     html.Div(
-                        id='control-panel',
-                        style={'color': '#42c8f5', 'margin': '2px', 'text-align': 'center'},
-                        children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML("control panel"),
+                        [   
+                            html.Div("Mode:"),
+                            html.A([
+                                html.Img(src='/assets/equity.jpeg', style={'width': '22px', 'height': '22px'}),
+                            ], href='/page-1', target = '_blank'),
+                            html.A([
+                                html.Img(src='/assets/pieChart.png', style={'width': '20px', 'height': '20px'}),
+                            ], href='/page-1', target = '_blank'),
+                        ],
+                        className='options__mode',
                     ),
+
+                    # html.Div(
+                    #     id='control-panel',
+                    #     style={'color': '#42c8f5', 'text-align': 'center'},
+                    #     children=dash_dangerously_set_inner_html.DangerouslySetInnerHTML("control panel"),
+                    # ),
+
                     html.Div(className='horizontal-line'),
                     html.Div(
                         [
@@ -160,6 +179,7 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                         html.P(id='dummyOutAnnotation', hidden=True),
                         html.P(id='plusMinusButton', hidden=True),
                         html.P(id='dummyOutNewPairSearch', hidden=True),
+                        html.P(id='dummyOutHover', hidden=True),
                     ], style={'display': 'none'}),
 
                 ],
@@ -167,6 +187,21 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
             ),
 
             html.Div([
+                # html.A([
+                #     html.Img(src='/assets/pieChart.png', style={'width': '20px', 'height': '20px'}),
+                # ], href='/page-1', target = '_blank'),
+                # html.Div(id='page-content'),
+
+                # html.Button(
+                #     id='pie-chart-button',
+                #     children=[
+                #         html.Img(
+                #             src='/assets/pieChart.png', 
+                #             style={'width': '20px', 'height': '20px', 'border': '0', 'margin': '0', 'padding': '0'},
+                #         ),
+                #     ],
+                #     n_clicks=0,
+                # ),
                 dcc.Graph(
                     id='equity-chart',
                     figure=equity_chart_fig,
@@ -177,13 +212,12 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                         'width': '100%'
                     }  # Set the chart height as 30% of the viewport height
                 )
-            ], style={
+                ], style={
                     'width': '80%',
                     'height': '100%',
                     'display': 'inline-block',
                     # 'border': '1px solid black'
                     'flexGrow': 1,
-
                 }
             ),   # Adjust the width and alignment
             ], style={
@@ -193,20 +227,15 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                     'padding': '0 5px 5px'
                 }
             ),
-            # html.Script(
-            #     """
-            #     document.addEventListener('DOMContentLoaded', function() {
-            #         // Get the annotation element by its class name
-            #         var annotationElement = document.querySelector('.annotation-text');
 
-            #         // Add a click event listener to the annotation
-            #         annotationElement.addEventListener('click', function() {
-            #             console.log('Annotation clicked');
-            #         });
-            #     });
-            #     """
-            # )
-            # html.Script(src='C:/Users/fsami/Desktop/trejdor/app.js'),
+
+            # html.Div([
+            #     html.Div(
+            #         dcc.Link(f"{page['name']} - {page['path']}", href=page["relative_path"])
+            #     ) for page in dash.page_registry.values()
+            # ]),
+            # dash.page_container
+            # html.Script(src='./assets/app.js'),
         ]
     )
 

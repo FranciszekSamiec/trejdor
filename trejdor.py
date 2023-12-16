@@ -72,7 +72,10 @@ app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
 
-
+page_1_layout = html.Div([
+    html.H1("Page 1"),
+    html.P("This is the content of page 1."),
+])
 
 
 #-------------------------------------------------------------- INITIALIZATION
@@ -96,6 +99,14 @@ info = availableRange(selected_option, selected_frequency)
 # Define the layout of the app (in the layout.py file)
 app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, "")
 #-------------------------------------------------------------- INITIALIZATION
+
+# @app.callback(Output('page-content', 'children'),
+#               [Input('url', 'pathname')])
+# def display_page(pathname):
+#     if pathname == '/page-1':
+#         return page_1_layout
+#     else:
+#         return app.layout
 
 
 
@@ -1116,7 +1127,7 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
     global prevCapital
     global firstWasChangedShape
     # print()
-    # print(clickData)
+    print(clickData)
     if value != prevRadio:
         wasRadioChanged = True
         prevRadio = value
@@ -1510,13 +1521,102 @@ def addDeletePairs(plus_clicks, minus_clicks, style, newPairInput):
     
 
 @app.callback(
-    Output('candlestick-chart', 'figure', allow_duplicate=True),
-    [Input('candlestick-chart', 'hoverData')],
+    Output('candlestick-chart', 'figure'),
+    Input('candlestick-chart', 'hoverData'),
     prevent_initial_call=True,
-)
-def display_hover_data(hoverData):
-    print(hoverData)
-    return dash.no_update
+)   
+def displayHoverData(hoverData):
+    if hoverData is not None:
+        # print(hoverData)
+        # x_value = hoverData['points'][0]['x']
+        # y_value = hoverData['points'][0]['y']
+
+        # annotation = {
+        #     'x': x_value,
+        #     'y': y_value,
+        #     'xref': 'x',
+        #     'yref': 'y',
+        #     'text': f'x: {x_value}, y: {y_value}',
+        #     'showarrow': True,
+        #     'arrowhead': 2,
+        #     'arrowcolor': 'red',
+        #     'arrowwidth': 2,
+        #     'bordercolor': 'red',
+        #     'borderwidth': 2,
+        #     'borderpad': 4,
+        #     'bgcolor': 'white',
+        #     'opacity': 0.8
+        # }
+
+        # fig.layout.annotations.append(annotation)
+
+        # return fig
+        return dash.no_update
+
+    else:
+        return dash.no_update
+
+
+
+# @app.callback(
+#     Output('candlestick-chart', 'figure', allow_duplicate=True),
+#     Input('candlestick-chart', 'hoverData'),
+#     State('candlestick-chart', 'figure'),
+#     prevent_initial_call=True,
+# )
+# def display_hover_data(hoverData, figure):
+#     print(hoverData)
+#     x = hoverData.get('points')[0]['x']
+#     # y = hoverData.get('points')[0]['y']
+
+#     # fig.add_annotation(
+#     #     go.layout.Annotation(
+#     #         text= data.iloc[-1]['Close'],# + data.iloc[-1]['Date'],
+#     #         # textangle=90, 
+#     #         xref = "paper",
+#     #         x=0.5,
+#     #         # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
+#     #         y = y,
+#     #         yref="y",
+#     #         showarrow=False,
+#     #         arrowhead=0,
+#     #         bgcolor="red",
+#     #         bordercolor="red",
+#     #         borderwidth=2,
+#     #         font=dict(size=12, color="white"),
+#     #         align="center",
+#     #         # captureevents=True,
+#     #         # hovertext="Double-lick to load another month",
+#     #         width=20,
+#     #         height=25,
+#     #         opacity=1,
+#     #     )
+#     # )
+
+#     # add annotations to figure
+#     # figure['layout'].update(
+#     #     {
+#     #         'annotations': [
+#     #             {
+#     #                 'xref': 'x',
+#     #                 'yref': 'paper',
+#     #                 'showarrow': False,
+#     #                 'text': f'x:{x}',
+#     #                 'x': 1,
+#     #                 'y': 1,
+#     #             },
+#     #             {
+#     #                 'xref': 'paper',
+#     #                 'yref': 'y',
+#     #                 'showarrow': False,
+#     #                 'text': f'y:{y}',
+#     #                 'x': -0.15,
+#     #                 'y': y,
+#     #             },
+#     #         ]
+#     #     }
+#     # )
+#     return dash.no_update
 
 
 

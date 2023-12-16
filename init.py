@@ -351,14 +351,15 @@ def initCandlestickChart(data):
                                         low=data['Low'],
                                         close=data['Close'],
                                         name='ohlc',
-                                        hoverinfo='y',)],
+                                        # hoverinfo='x+y',
+                                        )],
                                         )
     fig.update_layout(template=custom_theme)
 
     # # Add custom layout
     fig.update_layout(
         title="",
-        hovermode="y",
+        hovermode='closest',
         xaxis_rangeslider_visible=False,
         yaxis_autorange=False,
         # this is very interesting, it causes problems with scrolling zoom
