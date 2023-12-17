@@ -96,10 +96,10 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                             html.Div("Mode:"),
                             html.A([
                                 html.Img(src='/assets/equity.jpeg', style={'width': '22px', 'height': '22px'}),
-                            ], href='/page-1', target = '_blank'),
+                            ], href='/'),
                             html.A([
                                 html.Img(src='/assets/pieChart.png', style={'width': '20px', 'height': '20px'}),
-                            ], href='/page-1', target = '_blank'),
+                            ], href='/page-1'),
                         ],
                         className='options__mode',
                     ),
@@ -180,47 +180,39 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                         html.P(id='plusMinusButton', hidden=True),
                         html.P(id='dummyOutNewPairSearch', hidden=True),
                         html.P(id='dummyOutHover', hidden=True),
+                        html.P(id='dummyTriggerDashboard', hidden=True, children = 0),
+                        # html.Div(id='dummyTriggerDashboard', hidden=True, children = 0),
                     ], style={'display': 'none'}),
 
                 ],
                 className='options',
             ),
 
-            html.Div([
-                # html.A([
-                #     html.Img(src='/assets/pieChart.png', style={'width': '20px', 'height': '20px'}),
-                # ], href='/page-1', target = '_blank'),
-                # html.Div(id='page-content'),
-
-                # html.Button(
-                #     id='pie-chart-button',
-                #     children=[
-                #         html.Img(
-                #             src='/assets/pieChart.png', 
-                #             style={'width': '20px', 'height': '20px', 'border': '0', 'margin': '0', 'padding': '0'},
-                #         ),
-                #     ],
-                #     n_clicks=0,
-                # ),
-                dcc.Graph(
-                    id='equity-chart',
-                    figure=equity_chart_fig,
-                    config={'displaylogo': False,'editable': True, 'responsive': True, 'scrollZoom': False},
-                    style={
-                        'transparent' : 'false',
-                        'height': '100%',
-                        'width': '100%'
-                    }  # Set the chart height as 30% of the viewport height
-                )
-                ], style={
-                    'width': '80%',
+            html.Div(
+                [
+                    dcc.Graph(
+                        id='equity-chart',
+                        figure=equity_chart_fig,
+                        config={'displaylogo': False,'editable': True, 'responsive': True, 'scrollZoom': False},
+                        style={
+                            'transparent' : 'false',
+                            'height': '100%',
+                            'width': '100%'
+                        }  # Set the chart height as 30% of the viewport height
+                    )
+                ],
+                style={
+                    'width': '100%',
                     'height': '100%',
                     'display': 'inline-block',
                     # 'border': '1px solid black'
                     'flexGrow': 1,
-                }
+                },
+                id='trading-eval',
+
             ),   # Adjust the width and alignment
-            ], style={
+            ],
+            style={
                     'display': 'flex',
                     'height': 'calc(38vh - 15px)',
                     'background-color': '#323738',

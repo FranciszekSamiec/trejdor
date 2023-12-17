@@ -26,3 +26,4 @@ import threading
 import warnings
 import binance
 import ciso8601
+import plotly.express as px

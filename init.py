@@ -506,3 +506,14 @@ def initEquityChart(equity_values):
 #     # global data
 #     # global equity_chart_fig   
 #     # global equity_values
+
+
+def initPieChart(labels, values):
+
+    fig = go.Figure(
+        data=[go.Pie(labels=labels, values=values)],
+        layout=go.Layout(title='Pie Chart', template=custom_theme)
+    )
+
+
+    return fig

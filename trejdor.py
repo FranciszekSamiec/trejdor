@@ -7,6 +7,7 @@ from layout import createLayout
 from eqChart import *
 from api import *
 import api # same story as with init - to change global variables in api
+from dashboard import createDashBoard
 
 # pydatetime deprecated warning, not a problem for now
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -15,7 +16,8 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 #--------------------------------------------- GLOBAL VARIABLES
 listOfPositions = []
 isAddedPosition = False
-count1 = 0 
+count1 = 0
+count2 = 0
 equity_values = []
 startCapital = 100000
 perecentToRisk = 0.02
@@ -45,6 +47,17 @@ prevRadio = 'long position'
 lastRelDataOfZoom = {}
 count = 0 # needed to cause change to dummy so as to trigger callback: displayclickdata
 
+categories = ['long maxouts', 'long < max', 'short maxouts', 'short < max']
+longMaxouts = 1
+longLessMax = 1
+shortMaxouts = 1
+shortLessMax = 1
+lastCategory = ""
+
+
+
+
+
 # right now app not timezone aware
 timezone = pytz.timezone("Europe/Warsaw")
 # says how many candles to load (from the current date) at the
@@ -72,10 +85,7 @@ app = dash.Dash(__name__)
 
 #--------------------------------------------- GLOBAL VARIABLES
 
-page_1_layout = html.Div([
-    html.H1("Page 1"),
-    html.P("This is the content of page 1."),
-])
+
 
 
 #-------------------------------------------------------------- INITIALIZATION
@@ -100,13 +110,41 @@ info = availableRange(selected_option, selected_frequency)
 app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, "")
 #-------------------------------------------------------------- INITIALIZATION
 
-# @app.callback(Output('page-content', 'children'),
-#               [Input('url', 'pathname')])
-# def display_page(pathname):
-#     if pathname == '/page-1':
-#         return page_1_layout
-#     else:
-#         return app.layout
+
+
+
+eqChart = dcc.Graph(
+                        id='equity-chart',
+                        figure=equity_chart_fig,
+                        config={'displaylogo': False,'editable': True, 'responsive': True, 'scrollZoom': False},
+                        style={
+                            'transparent' : 'false',
+                            'height': '100%',
+                            'width': '100%'
+                        }  # Set the chart height as 30% of the viewport height
+                    )
+
+@app.callback(Output('trading-eval', 'children'),
+              [Input('url', 'pathname')],
+            #   [Input('dummyTriggerDashboard', 'children')],
+            )
+def display_page(pathname):
+    ctx = dash.callback_context
+    triggered_by = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+    print("adasdasda")
+    print(longMaxouts)
+
+
+    pieChart = initPieChart(categories, [longMaxouts, longLessMax, shortMaxouts, shortLessMax])
+    dashboard = createDashBoard(pieChart)
+
+    if pathname == '/page-1':
+        return dashboard
+    else:
+        if triggered_by == 'equity-chart.figure':
+            return dash.no_update
+        else:
+            return eqChart
 
 
 
@@ -141,7 +179,16 @@ def isChangedShape(relayoutData):
 def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLoss, takeProfit):
     global startCapital
     # looking for candle hitting stop loss or take profit before 24 candles
-    
+    # ------ for dashboard
+
+    # global longMaxouts
+    # global longLessMax
+    # global shortMaxouts
+    # global shortLessMax
+
+
+
+
     x = indexOfEntryCandle + 1
 
     # print(endPrice, "endPrice ", entryPrice, "entryPrice ", stopLoss, " stopLoss", takeProfit, " takeProfit")
@@ -212,6 +259,8 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
                 result = (losingPerc) * tradeCapital * (-1)
 
     print(result, "result")
+
+
 
     return result
         
@@ -441,12 +490,49 @@ def changePair(selected_option):
     return fig, equity_chart_fig
     
 
+# for maxouts and less maxouts
+def whichCategory(entryLevel, stopLoss, direction, percToRisk):
+
+
+    tradePerc = abs(entryLevel - stopLoss) / entryLevel
+
+    if direction == 'long':
+        if tradePerc > percToRisk:
+            return 'long maxouts'
+
+        else:
+            return 'long < max'
+    else:
+        if tradePerc > percToRisk:
+            return 'short maxouts'
+        else:
+            return 'short < max'
+        
+
+
+def deleteLastCat(lastCategory):
+    global longMaxouts
+    global longLessMax
+    global shortMaxouts
+    global shortLessMax
+
+    if lastCategory == 'long maxouts':
+        longMaxouts = longMaxouts - 1
+    elif lastCategory == 'long < max':
+        longLessMax = longLessMax - 1
+    elif lastCategory == 'short maxouts':
+        shortMaxouts = shortMaxouts - 1
+    elif lastCategory == 'short < max':
+        shortLessMax = shortLessMax - 1
+
 
 @app.callback(
-    Output('equity-chart', 'figure', allow_duplicate=True),  # Output to update the candlestick chart
+    Output('equity-chart', 'figure', allow_duplicate=True),
+    Output('dummyTriggerDashboard', 'children'),
     Input('dummyOutNewPos', 'children'),
     Input('candlestick-chart', 'relayoutData'),
     State('equity-chart', 'figure'),
+
     prevent_initial_call=True
 )
 def update_equity_chart(children, relayoutData, equity_chart_fig):
@@ -455,6 +541,11 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
     global isAddedPosition
     global firstWasChangedShape
     global newVal
+    global perecentToRisk
+    global lastCategory
+    global count2
+
+
 
     updated_fig = initEquityChart(equity_values)
     profitLossRegions = makeTracesToColorEqChart(startCapital, equity_values)
@@ -518,6 +609,13 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
                     listOfPositions[-1]['takeProfit'])
 
 
+
+    deleteLastCat(lastCategory)
+
+    countMaxouts(listOfPositions[-1]['entryPrice'], listOfPositions[-1]['stopLoss'],
+                    listOfPositions[-1]['direction'], perecentToRisk)
+
+
     if firstWasChangedShape:
         
         newVal = equity_values[-1]
@@ -529,8 +627,13 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
     profitLossRegions = makeTracesToColorEqChart(startCapital, equity_values)
     useTracesToColor(profitLossRegions, updated_fig_relay)
 
+    # updatedPiechart = initPieChart(categories, [longMaxouts, longLessMax, shortMaxouts, shortLessMax])
 
-    return updated_fig_relay
+    count2 = (count2 + 1) % 3
+
+    return [updated_fig_relay, dash.no_update]
+
+
 
 def roundDate(date):
     if timeframe == '1m':
@@ -1096,6 +1199,28 @@ def loadNewData(relayout_data):
         return fig
 
 
+def countMaxouts(entryLevel, stopLoss, percToRisk, direction): 
+    global longMaxouts
+    global shortMaxouts
+    global longLessMax
+    global shortLessMax
+    global lastCategory
+
+    tradePerc = abs(entryLevel - stopLoss) / entryLevel
+    if direction == 'long':
+        if tradePerc > percToRisk:
+            longMaxouts += 1
+        else:
+            longLessMax += 1
+    else:
+        if tradePerc > percToRisk:
+            shortMaxouts += 1
+        else:
+            shortLessMax += 1
+    
+    lastCategory = whichCategory(entryLevel, stopLoss, direction, percToRisk)
+        
+
 
 # occupiedCandle = [False] * len(data.index)
 # Define the callback to capture click events and update the chart
@@ -1126,6 +1251,16 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
     global startCapital
     global prevCapital
     global firstWasChangedShape
+    global perecentToRisk
+
+    #------ for dashboard
+    global longMaxouts
+    global shortMaxouts
+    global longLessMax
+    global shortLessMax
+
+
+
     # print()
     print(clickData)
     if value != prevRadio:
@@ -1253,6 +1388,8 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
             firstWasChangedShape = True
             listOfPositions.append(newPos)
 
+            countMaxouts(newPos['entryPrice'], newPos['stopLoss'], perecentToRisk, newPos['direction'])
+
             newEq = prevCapital + executePosition(value,point_index, newPos['entryPrice'], 
                                                  data.iloc[endOfShape]['Close'], 
                                                  newPos['stopLoss'], 
@@ -1270,6 +1407,11 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
             listOfPositions = []
             prevCapital = startCapital
             equity_values = [startCapital]
+            
+            longMaxouts = 0
+            shortMaxouts = 0
+            longLessMax = 0
+            shortLessMax = 0
 
             isAddedPosition = False
 
