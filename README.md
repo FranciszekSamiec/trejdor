@@ -9,8 +9,6 @@ Welcome to the Treydor App repository! This is a Python Dash application that al
 - [`Usage`](#usage)
 - [`Roadmap`](#roadmap)
 - [`Contributing`](#contributing)
-- [`License`](#license)
-
 
 ## `Features` 📋
 
@@ -57,9 +55,5 @@ Here's what we have in store for the future of the Trading App:
 - 🌐 Multiple Exchanges: Extend the app's support to different cryptocurrency markets.
 - 💡 Make app more respnsive by using javascript.
 
-
-## `License` 📜
-
-This project is licensed under the MIT License. See the [`LICENSE`](LICENSE) file for details.
 
 Happy Trading! 📈💰
