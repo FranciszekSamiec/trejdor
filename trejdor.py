@@ -150,18 +150,15 @@ def display_page(pic1, pic2, children, val):
     eqLay = createEqChartLayout(eqChart)
 
 
-    print(val, "????????????????")
     pieChart = initPieChart(categories, [longMaxouts, longLessMax, shortMaxouts, shortLessMax])
     barChart = initBarChart(categoriesBar, [barCat1h, barCat24h, barCat2d, barCat7d])
     histogram = initHistogram(histData)
     dashboard = createDashBoard(pieChart, barChart, histogram)
 
     if triggered_by == 'dashboardMode.n_clicks':
-        print("dashboard")
         mode = 'dashboard'
         # return dashboard
     else:
-        print("equity")
         if triggered_by != 'dummyTriggerDashboard.children':
         #     return dash.no_update
         # else:
@@ -217,13 +214,11 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
 
     x = indexOfEntryCandle + 1
 
-    # print(endPrice, "endPrice ", entryPrice, "entryPrice ", stopLoss, " stopLoss", takeProfit, " takeProfit")
 
 
 
     while x < len(data.index) - 1 and x < indexOfEntryCandle + 24:
 
-        # print(direction)
         if direction == 'long position':
     
             if data.iloc[x]['High'] >= takeProfit or data.iloc[x]['Low'] <= stopLoss:
@@ -681,7 +676,6 @@ def triggerDashboardUpdate(children, relayoutData, n_clicks):
     delta = x1 - x0
     hours = delta.total_seconds() / 3600
 
-    print(x1 - x0)
     histData.append(hours)
     
     count2 = (count2 + 1) % 4
@@ -1144,7 +1138,6 @@ def makeAdjustedRelayout(fig, relayout_data):
     # if autorange return relayout_data and do not proceed
   
     if isAutoSized(relayout_data):
-        # print("gggurba")
         return autoRangeRelayout()   
     
     if not isChangedZoom(relayout_data):
@@ -1156,17 +1149,13 @@ def makeAdjustedRelayout(fig, relayout_data):
     dates = getDatesFromRelayoutData(relayout_data)
     start = dates[0]
     end = dates[1]
-    # print("#####")
-    # print(end)
-    # print(endIndex)
-    print(start, end, "%")
+
     startIndex = getIndexFromDate(start)
     endIndex = getIndexFromDate(end)
 
     if startIndex == endIndex:
         return relayout_data
 
-    # print(startIndex, endIndex, "$$$$$$$")
     minMax = findMinMaxValues(startIndex, endIndex)
 
     margin = calculateTopBottomMargin(minMax[0], minMax[1])
@@ -1177,7 +1166,6 @@ def makeAdjustedRelayout(fig, relayout_data):
 
     filteredData = data.iloc[startIndex:endIndex]
 
-    # print(max(filteredData['Volume']))
     fig.update_layout(
         yaxis2_range=[0, max(filteredData['Volume']) * 2],
     )
@@ -1218,11 +1206,9 @@ def whatKindOfAnnotation(relayout_data):
 
     first_value = next(iter(relayout_data.values()))
 
-    print(relayout_data.values())
-    print(relayout_data)
+
     # exception for dashed line when up to date, stupid af i know
     if first_value == "<":
-        print(relayout_data)
 
         return "< right"
 
@@ -1274,7 +1260,6 @@ def loadNewData(relayout_data):
     else:
         kindOfAnnotation = whatKindOfAnnotation(relayout_data)
 
-        print(kindOfAnnotation, " <<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 
         if kindOfAnnotation == "> right":
             dateBegin = data.iloc[-1]['Date']
@@ -1319,7 +1304,6 @@ def loadNewData(relayout_data):
             occupiedCandle = [False] * len(newData) + occupiedCandle
         
         elif kindOfAnnotation == "> left":
-            # print("good")
             dateBegin = data.iloc[0]['Date']
             dateEnd = findDateNCandlesBeforeDate(timeframe, dateBegin, init.candlesToLoadwithVerticalLine, ">")
             dateBegin = dateBegin.strftime('%Y-%m-%d %H:%M:%S')
