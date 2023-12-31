@@ -1,15 +1,16 @@
 from libraries import *
 from init import custom_theme
 
-def createDashBoard(pieChart):
-    # labels = ['Long maxouts', 'long < max', 'short maxouts', 'short < max']
-    # values = [30, 40, 30, 10]
-    categories = ['Category 1', 'Category 2', 'Category 3', 'Category 4']
-    bar_values = [50, 20, 30, 40]
+def createDashBoard(pieChart, barChart, histogram):
+
+    # data = np.random.randn(1000)
+
+    # histogram_trace = go.Histogram(x=data, nbinsx=20, histnorm='probability')
 
     page_1_layout = html.Div(
         [
             dcc.Graph(
+                config={'displayModeBar': False},
                 id='pie-chart',
                 figure = pieChart,
                 # figure=go.Figure(
@@ -19,19 +20,32 @@ def createDashBoard(pieChart):
                 style={
                     'display': 'inline-block',
                     'height': '100%',
-                    'width': '50%'
+                    'width': '33.33%'
                 }  # Set the chart height as 30% of the viewport height
             ),
 
             dcc.Graph(
+                config={'displayModeBar': False},
+                
                 id='bar-chart',
-                figure=px.bar(x=categories, y=bar_values, title='Bar Chart', template=custom_theme),
+                figure=barChart,
                 style={
                     'display': 'inline-block',
                     'height': '100%',
-                    'width': '50%',
+                    'width': '33.33%',
                 }  # Adjust width and height as needed
             ),
+            dcc.Graph(
+                # title='Histogram',
+                config={'displayModeBar': False},
+                id='histogram',
+                figure=histogram,
+                style={
+                    'display': 'inline-block',
+                    'height': '100%',
+                    'width': '33.33%',
+                }  # Adjust width and height as needed
+            )
         ],
         style={
             'width': '100%',
@@ -43,15 +57,5 @@ def createDashBoard(pieChart):
         id='trading-eval',
 
     )
-
-
-
-
-
-
-    # page_1_layout = html.Div([
-    #     html.H1("Page 1"),
-    #     html.P("This is the content of page 1."),
-    # ])
 
     return page_1_layout

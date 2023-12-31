@@ -4,12 +4,13 @@ import init # written this way to change the alue of global variables in
 # init (right now only one - candles... = 100)
 from init import *
 from layout import createLayout
+from layout import createEqChartLayout
 from eqChart import *
 from api import *
 import api # same story as with init - to change global variables in api
 from dashboard import createDashBoard
 
-# pydatetime deprecated warning, not a problem for now
+# pydatetime deprecated warning, not a problem for now, es gut
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -47,15 +48,27 @@ prevRadio = 'long position'
 lastRelDataOfZoom = {}
 count = 0 # needed to cause change to dummy so as to trigger callback: displayclickdata
 
+# statistics for piechart
 categories = ['long maxouts', 'long < max', 'short maxouts', 'short < max']
 longMaxouts = 1
 longLessMax = 1
 shortMaxouts = 1
 shortLessMax = 1
-lastCategory = ""
+lastCategory = "" # needed to know which category to delete when changing position
 
+# statistics for barchart
+categoriesBar = ['[1h; 24h)', '[24h; 2d)', '[2d; 7d)', '[7d; ∞)']
+barCat1h = 0
+barCat24h = 0
+barCat2d = 0
+barCat7d = 0
 
+# statistics for histogram
+histData = []
 
+# which mode is selected: [equity, dashboard]
+mode = 'equity'
+currentPair = 'BTCBUSD'
 
 
 # right now app not timezone aware
@@ -89,11 +102,8 @@ app = dash.Dash(__name__)
 
 
 #-------------------------------------------------------------- INITIALIZATION
-# data = makeDataFrame("./months/BTCBUSD", startM, startY, endM, endY)
 
 data = makeDataFrame(selected_option, selected_frequency , beginDate, endDate)
-
-# print(data)
 
 occupiedCandle = [False] * len(data.index)
 fig = initCandlestickChart(data)
@@ -102,50 +112,66 @@ equity_chart_fig = initEquityChart(equity_values)
 
 occupiedCandle = [False] * len(data.index)
 
-# Create the Dash app
 
 
 info = availableRange(selected_option, selected_frequency)
 # Define the layout of the app (in the layout.py file)
-app.layout = createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, "")
+app.layout = createLayout(fig, options, frequency_options, currentPair, equity_chart_fig, info, "", histData)
 #-------------------------------------------------------------- INITIALIZATION
 
 
-
-
-eqChart = dcc.Graph(
-                        id='equity-chart',
-                        figure=equity_chart_fig,
-                        config={'displaylogo': False,'editable': True, 'responsive': True, 'scrollZoom': False},
-                        style={
-                            'transparent' : 'false',
-                            'height': '100%',
-                            'width': '100%'
-                        }  # Set the chart height as 30% of the viewport height
-                    )
+# eqChart = dcc.Graph(
+#                         id='equity-chart',
+#                         figure=equity_chart_fig,
+#                         config={'displaylogo': False,'editable': True, 'responsive': True, 'scrollZoom': False},
+#                         style={
+#                             'transparent' : 'false',
+#                             'height': '100%',
+#                             'width': '100%'
+#                         }  # Set the chart height as 30% of the viewport height
+#                     )
 
 @app.callback(Output('trading-eval', 'children'),
-              [Input('url', 'pathname')],
-            #   [Input('dummyTriggerDashboard', 'children')],
-            )
-def display_page(pathname):
+            #   Output('chart-title-dropdown', 'value'),
+            [Input('equityMode', 'n_clicks'), Input('dashboardMode', 'n_clicks')],
+            [Input('dummyTriggerDashboard', 'children')],
+            State('chart-title-dropdown', 'value'),
+)
+def display_page(pic1, pic2, children, val):
+    global mode
+    global currentPair
+
     ctx = dash.callback_context
     triggered_by = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-    print("adasdasda")
-    print(longMaxouts)
+  
+    eqChart = initEquityChart(equity_values)
+    profitLossRegions = makeTracesToColorEqChart(startCapital, equity_values)
+    useTracesToColor(profitLossRegions, eqChart)
+    eqLay = createEqChartLayout(eqChart)
 
 
+    print(val, "????????????????")
     pieChart = initPieChart(categories, [longMaxouts, longLessMax, shortMaxouts, shortLessMax])
-    dashboard = createDashBoard(pieChart)
+    barChart = initBarChart(categoriesBar, [barCat1h, barCat24h, barCat2d, barCat7d])
+    histogram = initHistogram(histData)
+    dashboard = createDashBoard(pieChart, barChart, histogram)
 
-    if pathname == '/page-1':
-        return dashboard
+    if triggered_by == 'dashboardMode.n_clicks':
+        print("dashboard")
+        mode = 'dashboard'
+        # return dashboard
     else:
-        if triggered_by == 'equity-chart.figure':
-            return dash.no_update
-        else:
-            return eqChart
+        print("equity")
+        if triggered_by != 'dummyTriggerDashboard.children':
+        #     return dash.no_update
+        # else:
+            mode = 'equity'
+            # return eqLay
 
+    if mode == 'equity':
+        return eqLay
+    else:
+        return dashboard
 
 
 @app.callback(
@@ -207,7 +233,6 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
                 elif data.iloc[x]['Low'] <= stopLoss:
                     endPrice = stopLoss
 
-                print("ebebe")
                 break
         else:
             if data.iloc[x]['High'] >= stopLoss or data.iloc[x]['Low'] <= takeProfit:
@@ -258,7 +283,6 @@ def executePosition(direction, indexOfEntryCandle, entryPrice, endPrice, stopLos
             elif endPrice > entryPrice:
                 result = (losingPerc) * tradeCapital * (-1)
 
-    print(result, "result")
 
 
 
@@ -452,7 +476,7 @@ def changeFrequency(selected_frequency):
 
 @app.callback(
     Output('candlestick-chart', 'figure', allow_duplicate=True),
-    Output('equity-chart', 'figure', allow_duplicate=True), 
+    Output('trading-eval', 'children', allow_duplicate=True), 
     Input('chart-title-dropdown', 'value'),
     prevent_initial_call=True
       # Input from the dropdown menu
@@ -467,6 +491,22 @@ def changePair(selected_option):
     global occupiedCandle
     global listOfPositions
 
+    global longMaxouts
+    global shortMaxouts
+    global longLessMax
+    global shortLessMax
+
+    global barCat1h
+    global barCat24h
+    global barCat2d
+    global barCat7d
+
+    global histData
+
+    global mode
+
+    global currentPair
+    currentPair = selected_option
     data = data.drop(data.index)
 
     info = availableRange(selected_option, selected_frequency)
@@ -485,9 +525,35 @@ def changePair(selected_option):
     addIndicators(data, fig)
 
     equity_values = [startCapital]
+
+    longMaxouts = 1
+    shortMaxouts = 1
+    longLessMax = 1
+    shortLessMax = 1
+
+    barCat1h = 0
+    barCat24h = 0
+    barCat2d = 0
+    barCat7d = 0
+
+    histData = []
+
+    pieChart = initPieChart(categories, [longMaxouts, longLessMax, shortMaxouts, shortLessMax])
+    barChart = initBarChart(categoriesBar, [barCat1h, barCat24h, barCat2d, barCat7d])
+    histogram = initHistogram(histData)
+
     equity_chart_fig = initEquityChart(equity_values)
 
-    return fig, equity_chart_fig
+    eqChartDiv = createEqChartLayout(equity_chart_fig)
+
+    dashboard = createDashBoard(pieChart, barChart, histogram)
+
+    if mode == 'equity':
+        return fig, eqChartDiv
+    else:
+        return fig, dashboard
+
+
     
 
 # for maxouts and less maxouts
@@ -527,8 +593,104 @@ def deleteLastCat(lastCategory):
 
 
 @app.callback(
-    Output('equity-chart', 'figure', allow_duplicate=True),
     Output('dummyTriggerDashboard', 'children'),
+    Input('dummyOutNewPos', 'children'),
+    Input('candlestick-chart', 'relayoutData'),
+    Input('refresh-button', 'n_clicks'),
+)
+def triggerDashboardUpdate(children, relayoutData, n_clicks):
+    ctx = dash.callback_context
+    triggered_by = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+    global count2
+
+
+    if triggered_by == 'refresh-button.n_clicks':
+        count2 = (count2 + 1) % 4
+        return count2
+    
+    if len(listOfPositions) == 0:
+        return dash.no_update
+
+
+    if triggered_by == 'dummyOutNewPos.children':
+        count2 = (count2 + 1) % 4
+        return count2
+    #     isAddedPosition = False
+
+
+
+    if not isChangedShape(relayoutData):
+        return dash.no_update
+
+
+    x1 = 0
+    y0 = 0
+    y1 = 0
+    x0 = 0
+
+    for key, val in relayoutData.items():
+        if key.endswith('x1'):
+            x1 = val
+        elif key.endswith('y0'):
+            y0 = val
+        elif key.endswith('y1'):
+            y1 = val
+        elif key.endswith('x0'):
+            x0 = val
+
+    x0 = roundDate(x0)  
+    x1 = roundDate(x1)
+
+
+    # listOfPositions[-1]['entryDate'] = x0
+    # listOfPositions[-1]['entryPrice'] = y0
+    # listOfPositions[-1]['endPrice'] = y1
+    # listOfPositions[-1]['endDate'] = x1
+
+    # entryPrice = x0
+    # stopLoss = 0
+    # direction = ''
+
+    if listOfPositions[-1]['direction'] == 'long position':
+        # direction = 'long'
+        if y1 > y0:
+            listOfPositions[-1]['takeProfit'] = y1
+        else:
+            listOfPositions[-1]['stopLoss'] = y1
+            # stopLoss = y1
+
+    else:
+        # direction = 'short'
+        if y1 < y0:
+            listOfPositions[-1]['takeProfit'] = y1
+        else:
+            listOfPositions[-1]['stopLoss'] = y1
+            # stopLoss = y1
+        
+    
+
+
+    deleteLastCat(lastCategory)
+
+    countMaxouts(listOfPositions[-1]['entryPrice'], listOfPositions[-1]['stopLoss'], perecentToRisk,
+                    listOfPositions[-1]['direction'])
+    
+    if len(histData) > 0:
+        histData.pop()
+
+    delta = x1 - x0
+    hours = delta.total_seconds() / 3600
+
+    print(x1 - x0)
+    histData.append(hours)
+    
+    count2 = (count2 + 1) % 4
+    return count2
+
+
+@app.callback(
+    Output('equity-chart', 'figure', allow_duplicate=True),
+    # Output('dummyTriggerDashboard', 'children'),
     Input('dummyOutNewPos', 'children'),
     Input('candlestick-chart', 'relayoutData'),
     State('equity-chart', 'figure'),
@@ -544,7 +706,7 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
     global perecentToRisk
     global lastCategory
     global count2
-
+    global histData
 
 
     updated_fig = initEquityChart(equity_values)
@@ -581,6 +743,8 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
     x0 = roundDate(x0)  
     x1 = roundDate(x1)
 
+    # histData.pop()
+    # histData.append(x1 - x0)
 
     listOfPositions[-1]['entryDate'] = x0
     listOfPositions[-1]['entryPrice'] = y0
@@ -610,10 +774,10 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
 
 
 
-    deleteLastCat(lastCategory)
+    # deleteLastCat(lastCategory)
 
-    countMaxouts(listOfPositions[-1]['entryPrice'], listOfPositions[-1]['stopLoss'],
-                    listOfPositions[-1]['direction'], perecentToRisk)
+    # countMaxouts(listOfPositions[-1]['entryPrice'], listOfPositions[-1]['stopLoss'],
+    #                 listOfPositions[-1]['direction'], perecentToRisk)
 
 
     if firstWasChangedShape:
@@ -631,7 +795,7 @@ def update_equity_chart(children, relayoutData, equity_chart_fig):
 
     count2 = (count2 + 1) % 3
 
-    return [updated_fig_relay, dash.no_update]
+    return updated_fig_relay
 
 
 
@@ -1054,8 +1218,12 @@ def whatKindOfAnnotation(relayout_data):
 
     first_value = next(iter(relayout_data.values()))
 
+    print(relayout_data.values())
+    print(relayout_data)
     # exception for dashed line when up to date, stupid af i know
-    if first_value == "←":
+    if first_value == "<":
+        print(relayout_data)
+
         return "< right"
 
     # print(relayout_data)
@@ -1100,13 +1268,13 @@ def loadNewData(relayout_data):
     global occupiedCandle
     global timeframe
 
-    print(relayout_data)
 
     if not isClickedAnnotation(relayout_data):
         return dash.no_update
     else:
         kindOfAnnotation = whatKindOfAnnotation(relayout_data)
 
+        print(kindOfAnnotation, " <<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 
         if kindOfAnnotation == "> right":
             dateBegin = data.iloc[-1]['Date']
@@ -1136,7 +1304,6 @@ def loadNewData(relayout_data):
             occupiedCandle = occupiedCandle[:-newLen]
             # newData = makeDataFrame(selected_option, selected_frequency, dateEnd, dateBegin)
         elif kindOfAnnotation == "num right":
-            print("good")
             init.candlesToLoadwithVerticalLine = getNumberOfCandlesfromAnnotation(relayout_data)
 
         elif kindOfAnnotation == "< left":
@@ -1206,6 +1373,12 @@ def countMaxouts(entryLevel, stopLoss, percToRisk, direction):
     global shortLessMax
     global lastCategory
 
+    if len(listOfPositions) == 0 and longMaxouts == 1 and shortMaxouts == 1 and longLessMax == 1 and shortLessMax == 1:
+        longMaxouts = 0
+        shortMaxouts = 0
+        longLessMax = 0
+        shortLessMax = 0
+
     tradePerc = abs(entryLevel - stopLoss) / entryLevel
     if direction == 'long':
         if tradePerc > percToRisk:
@@ -1222,6 +1395,38 @@ def countMaxouts(entryLevel, stopLoss, percToRisk, direction):
         
 
 
+def countIntervalsBetweenTrades():
+    global barCat1h
+    global barCat24h
+    global barCat2d
+    global barCat7d
+    # Sort the positions by entryDate
+    sorted_positions = sorted(listOfPositions, key = lambda x: x['entryDate'])
+
+    # Initialize interval counters
+
+    # Iterate through sorted positions and calculate intervals
+    if len(sorted_positions) > 1:
+        curr = len(sorted_positions) - 1
+        prev = curr - 1
+        entry_date_current = sorted_positions[curr]['entryDate']
+        entry_date_previous = sorted_positions[prev]['entryDate']
+
+        # Calculate the interval between consecutive trades
+        interval = entry_date_current - entry_date_previous
+
+        # Categorize the interval and update counters
+        if timedelta(hours=1) <= interval < timedelta(days=1):
+            barCat1h += 1  # [1h-24h)
+        elif timedelta(days=1) <= interval < timedelta(days=2):
+            barCat24h += 1  # [24h-2d)
+        elif timedelta(days=2) <= interval < timedelta(days=7):
+            barCat2d += 1  # [2d-7d)
+        else:
+            barCat7d += 1  # [7d-infinity)
+
+
+
 # occupiedCandle = [False] * len(data.index)
 # Define the callback to capture click events and update the chart
 @app.callback(
@@ -1233,7 +1438,6 @@ def countMaxouts(entryLevel, stopLoss, percToRisk, direction):
      Input('dummyOut', 'children')],
     [Input('candlestick-chart', 'relayoutData')],
     prevent_initial_call=True
-
 )
 def display_click_data(clickData, n_clicks, value, children, relayout_data):
     ctx = dash.callback_context
@@ -1259,10 +1463,16 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
     global longLessMax
     global shortLessMax
 
+    global barCat1h
+    global barCat24h
+    global barCat2d
+    global barCat7d
+
+    global histData
+
 
 
     # print()
-    print(clickData)
     if value != prevRadio:
         wasRadioChanged = True
         prevRadio = value
@@ -1375,10 +1585,13 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
                     'entryPrice': clicked_candle['Close'],
                     'stopLoss': data.iloc[point_index]['hh'],
                     'takeProfit': data.iloc[point_index]['Close'] - (data.iloc[point_index]['hh'] - data.iloc[point_index]['Close']),
-                    'direction': value
+                    'direction': value,
+                    # 'length': 24 # length in candles
                 }
 
             # print(fig['layout']['shapes'])
+
+
 
             addRRRatioAnnotation(fig, clicked_candle['Close'], clicked_candle['Date'],
                                   data.iloc[endOfShape]['Date'], newPos['stopLoss'],
@@ -1388,7 +1601,15 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
             firstWasChangedShape = True
             listOfPositions.append(newPos)
 
+            endDate = data.iloc[point_index + 24]['Date']
+            delta = endDate - clicked_candle['Date']
+            hours = delta.total_seconds() / 3600
+
+            histData.append(hours)
+            countIntervalsBetweenTrades()
             countMaxouts(newPos['entryPrice'], newPos['stopLoss'], perecentToRisk, newPos['direction'])
+
+
 
             newEq = prevCapital + executePosition(value,point_index, newPos['entryPrice'], 
                                                  data.iloc[endOfShape]['Close'], 
@@ -1408,10 +1629,17 @@ def display_click_data(clickData, n_clicks, value, children, relayout_data):
             prevCapital = startCapital
             equity_values = [startCapital]
             
-            longMaxouts = 0
-            shortMaxouts = 0
-            longLessMax = 0
-            shortLessMax = 0
+            longMaxouts = 1
+            shortMaxouts = 1
+            longLessMax = 1
+            shortLessMax = 1
+
+            barCat1h = 0
+            barCat24h = 0
+            barCat2d = 0
+            barCat7d = 0
+
+            histData = []
 
             isAddedPosition = False
 
@@ -1566,7 +1794,6 @@ def addRRRatioAnnotation(fig, entryPrice, entryDate, endDate, stopLoss, takeProf
     prevent_initial_call=True,
 )
 def printSearching(value):
-    print(value)
     if value == "":
         return dash.no_update, dash.no_update, dash.no_update
     else:
@@ -1586,11 +1813,9 @@ def printSearching(value):
     prevent_initial_call=True,
 ) 
 def readNewPairInput(dummyTrigger ,newPairInput):
-    print(newPairInput)
     # newPair = newPairInput
 
     if isSymbolListedOnBinance(newPairInput):
-        print("jest")
         return "symbol available", {'color': '#42c8f5',
                                         'max-width': '80px',
                                         'overflow-y': 'auto',
@@ -1598,7 +1823,6 @@ def readNewPairInput(dummyTrigger ,newPairInput):
 
                                         }
     else:
-        print("nie ma")
 
         return "symbol not available", {'color': 'orange',
                                         'max-width': '80px',
@@ -1631,9 +1855,7 @@ def addDeletePairs(plus_clicks, minus_clicks, style, newPairInput):
     if not style:
         return dash.no_update, dash.no_update
     elif style['color'] == '#42c8f5':
-        print("blue")
         if triggered_input == 'plus-button':
-            print("plus")
             symbol = newPairInput.replace("/", "")
             if not symbol in api.app_data['symbols']:
                 api.app_data['symbols'].append(symbol)
@@ -1645,7 +1867,6 @@ def addDeletePairs(plus_clicks, minus_clicks, style, newPairInput):
 
             # return "added", init.options
         elif triggered_input == 'minus-button':
-            print("minus--------")
 
 
 
@@ -1662,107 +1883,20 @@ def addDeletePairs(plus_clicks, minus_clicks, style, newPairInput):
     return init.options
     
 
-@app.callback(
-    Output('candlestick-chart', 'figure'),
-    Input('candlestick-chart', 'hoverData'),
-    prevent_initial_call=True,
-)   
-def displayHoverData(hoverData):
-    if hoverData is not None:
-        # print(hoverData)
-        # x_value = hoverData['points'][0]['x']
-        # y_value = hoverData['points'][0]['y']
-
-        # annotation = {
-        #     'x': x_value,
-        #     'y': y_value,
-        #     'xref': 'x',
-        #     'yref': 'y',
-        #     'text': f'x: {x_value}, y: {y_value}',
-        #     'showarrow': True,
-        #     'arrowhead': 2,
-        #     'arrowcolor': 'red',
-        #     'arrowwidth': 2,
-        #     'bordercolor': 'red',
-        #     'borderwidth': 2,
-        #     'borderpad': 4,
-        #     'bgcolor': 'white',
-        #     'opacity': 0.8
-        # }
-
-        # fig.layout.annotations.append(annotation)
-
-        # return fig
-        return dash.no_update
-
-    else:
-        return dash.no_update
-
-
-
 # @app.callback(
-#     Output('candlestick-chart', 'figure', allow_duplicate=True),
+#     Output('candlestick-chart', 'figure'),
 #     Input('candlestick-chart', 'hoverData'),
-#     State('candlestick-chart', 'figure'),
 #     prevent_initial_call=True,
-# )
-# def display_hover_data(hoverData, figure):
-#     print(hoverData)
-#     x = hoverData.get('points')[0]['x']
-#     # y = hoverData.get('points')[0]['y']
+# )   
+# def displayHoverData(hoverData):
+#     if hoverData is not None:
+ 
+#         return dash.no_update
 
-#     # fig.add_annotation(
-#     #     go.layout.Annotation(
-#     #         text= data.iloc[-1]['Close'],# + data.iloc[-1]['Date'],
-#     #         # textangle=90, 
-#     #         xref = "paper",
-#     #         x=0.5,
-#     #         # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
-#     #         y = y,
-#     #         yref="y",
-#     #         showarrow=False,
-#     #         arrowhead=0,
-#     #         bgcolor="red",
-#     #         bordercolor="red",
-#     #         borderwidth=2,
-#     #         font=dict(size=12, color="white"),
-#     #         align="center",
-#     #         # captureevents=True,
-#     #         # hovertext="Double-lick to load another month",
-#     #         width=20,
-#     #         height=25,
-#     #         opacity=1,
-#     #     )
-#     # )
-
-#     # add annotations to figure
-#     # figure['layout'].update(
-#     #     {
-#     #         'annotations': [
-#     #             {
-#     #                 'xref': 'x',
-#     #                 'yref': 'paper',
-#     #                 'showarrow': False,
-#     #                 'text': f'x:{x}',
-#     #                 'x': 1,
-#     #                 'y': 1,
-#     #             },
-#     #             {
-#     #                 'xref': 'paper',
-#     #                 'yref': 'y',
-#     #                 'showarrow': False,
-#     #                 'text': f'y:{y}',
-#     #                 'x': -0.15,
-#     #                 'y': y,
-#     #             },
-#     #         ]
-#     #     }
-#     # )
-#     return dash.no_update
+#     else:
+#         return dash.no_update
 
 
-
-#     return dash.no_update
 
 if __name__ == '__main__':
     app.run_server(debug = True, host="127.0.0.1", port="8050")

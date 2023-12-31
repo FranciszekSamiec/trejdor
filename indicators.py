@@ -95,7 +95,6 @@ def addVolume(data, fig):
         xaxis_title='Date',
         yaxis_title='Price',
         yaxis2=dict(title='Volume', overlaying='y', side='right', showgrid=False),
-        title='Candlestick Chart with Volume Bars'
     )
 
     # adjustor = 
@@ -113,7 +112,6 @@ def addVolume(data, fig):
         # yaxis2_range=[0, np.mean(data['Volume']) * 20],
         yaxis2_range=[0, max(data['Volume']) * 2],
 
-        title='Candlestick Chart with Volume Bars',
 
     )
 

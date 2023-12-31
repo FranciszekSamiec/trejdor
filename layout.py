@@ -1,9 +1,44 @@
 from libraries import *
 from dash_dangerously_set_inner_html import DangerouslySetInnerHTML
 
+def createEqChartLayout(fig):
+    eqLayout = html.Div(
+        [
+            dcc.Graph(
+                id='equity-chart',
+                figure=fig,
+                config={'displaylogo': False,'editable': True, 'responsive': True, 'scrollZoom': False},
+                style={
+                    'transparent' : 'false',
+                    'height': '100%',
+                    'width': '100%'
+                }  # Set the chart height as 30% of the viewport height
+            )
+        ],
+        style={
+            'width': '100%',
+            'height': '100%',
+            'display': 'inline-block',
+            # 'border': '1px solid black'
+            'flexGrow': 1,
+        },
+        id='trading-eval',
 
+    )
 
-def createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, pairInfo):
+    return eqLayout
+
+def createLayout(fig, options, frequency_options, selected_option, equity_chart_fig, info, pairInfo, histData):
+
+    histogram = px.histogram(histData, 
+                    title='Histogram of bills',
+                    # template=custom_theme,
+                    )
+
+    histogram.update_traces(textfont=dict(color='white'))
+
+    histogram.update_traces(marker=dict(opacity = 0.4, color='purple'))
+    histogram.update_layout(bargap=0.2)
 
     app_layout = html.Div(
         style={'background-color': '#323738', 'margin': '0'},
@@ -15,6 +50,18 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
 
 
             html.Div([
+
+                # dcc.Graph(
+                #     # title='Histogram',
+                #     config={'displayModeBar': False},
+                #     id='histogram',
+                #     figure=histogram,
+                #     style={
+                #         'display': 'inline-block',
+                #         'height': '100%',
+                #         'width': '33.33%',
+                #     }  # Adjust width and height as needed
+                # ),
 
                 dcc.Graph(
                     id='candlestick-chart' ,
@@ -31,6 +78,7 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                             id='chart-title-dropdown',
                             options=[{'label': option, 'value': option} for option in options],
                             value=selected_option,
+                            # placeholder='symbol',
                             className='my-dropdown',
                             searchable=True, 
                             style={'width': '155px', 'margin-right': '5px'},
@@ -94,12 +142,8 @@ def createLayout(fig, options, frequency_options, selected_option, equity_chart_
                     html.Div(
                         [   
                             html.Div("Mode:"),
-                            html.A([
-                                html.Img(src='/assets/equity.jpeg', style={'width': '22px', 'height': '22px'}),
-                            ], href='/'),
-                            html.A([
-                                html.Img(src='/assets/pieChart.png', style={'width': '20px', 'height': '20px'}),
-                            ], href='/page-1'),
+                            html.Img(id = 'equityMode', src='/assets/equity.jpeg', style={'width': '22px', 'height': '22px', 'cursor': 'pointer'}),
+                            html.Img(id = 'dashboardMode', src='/assets/pieChart.png', style={'width': '20px', 'height': '20px', 'cursor': 'pointer'}),
                         ],
                         className='options__mode',
                     ),

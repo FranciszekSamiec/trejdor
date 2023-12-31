@@ -58,21 +58,17 @@ def makeDataFrame(symbol, timeframe, beginDate, endDate):
     colnames=['Date','Open', 'High', 'Low', 'Close', 'Volume']
     
     output_folder = './months/' + symbol + '/'
-    print(output_folder)
     csv_file = f'{output_folder}{symbol}-{timeframe}.csv'
     # Read the entire CSV file into a DataFrame
     df = pd.read_csv(csv_file, names=colnames, header=0)
-    print(df)
     # Convert the 'Date' column to datetime objects
     df['Date'] = pd.to_datetime(df['Date'])
     
     # Filter the DataFrame based on the specified date range
-    print(beginDate)
-    print(endDate)
+
 
     mask = (df['Date'] >= beginDate) & (df['Date'] <= endDate)
     filtered_df = df.loc[mask]
-    print(filtered_df)
     return filtered_df
 
 
@@ -226,7 +222,7 @@ def addVertialLoaders(fig, data):
         
         fig.add_annotation(
             go.layout.Annotation(
-                text="←",
+                text="<",
                 # textangle=90, 
                 x=vertical_line_date_next,
                 # y=((data.iloc[-1]['Low'] + data.iloc[-1]['High']) / 2),
@@ -351,6 +347,7 @@ def initCandlestickChart(data):
                                         low=data['Low'],
                                         close=data['Close'],
                                         name='ohlc',
+                                        # title='',
                                         # hoverinfo='x+y',
                                         )],
                                         )
@@ -509,11 +506,56 @@ def initEquityChart(equity_values):
 
 
 def initPieChart(labels, values):
+    # transparency_values = [0.8, 0.5, 0.8, 0.5]
 
     fig = go.Figure(
-        data=[go.Pie(labels=labels, values=values)],
-        layout=go.Layout(title='Pie Chart', template=custom_theme)
+        data=[
+            go.Pie(
+                labels=labels,
+                values=values,
+                marker=dict(colors=['rgba(0, 255, 24, 0.3)', 'rgba(0, 255, 24, 0.88)', 'rgba(255, 0, 0, 0.5)', 'rgba(255, 0, 0, 0.8)']),
+                # marker=dict(colors=[f'rgba(31, 119, 180, {alpha})' for alpha in transparency_values])
+            )
+        ],
+        layout=go.Layout(title='Share of positions involving whole capital', template=custom_theme)
+    )
+    fig.update_traces(textfont=dict(color='white'))
+    fig.update_traces(hole=.4, hoverinfo="label+percent")
+
+
+    return fig
+
+def initBarChart(categories, bar_values):
+    fig = px.bar(
+                    x=categories,
+                    y=bar_values,
+                    # title='intervals between position openings',
+                    template=custom_theme,
+                )
+    fig.update_traces(marker=dict(opacity = 0.3, color='blue'))
+    fig.update_layout(title_text='intervals between position openings', xaxis_title='', yaxis_title='Count')
+
+    return fig
+
+def initHistogram(histData):
+    histogram_trace = go.Histogram(x=histData, nbinsx=20)
+
+    fig = go.Figure(
+        data=[histogram_trace],
+        layout=go.Layout(
+            # title=dict(text="Histogram", font=dict(size=50)),
+            # titleposition = "bottom center",
+            xaxis=dict(title='Value'),
+            yaxis=dict(title='Probability'),
+            template=custom_theme,
+            # margin=dict(l=80, r=80, t=80, b=80),  # Adjust margins as needed
+
+        )
     )
 
+    fig.update_layout(title_text='durations of positions', xaxis_title='duration', yaxis_title='Count')
+    fig.update_traces(textfont=dict(color='white'))
+    fig.update_traces(marker=dict(opacity = 0.4, color='purple'))
+    fig.update_layout(bargap=0.2)
 
     return fig

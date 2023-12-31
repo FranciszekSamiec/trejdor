@@ -4,13 +4,13 @@ body {
 }
 
 
-.g-xtitle, .g-ytitle {
+/* .g-xtitle, .g-ytitle {
     display: none;
 }
 
 .g-gtitle {
     display: none;
-}
+} */
 
 .select-input {
     width: 100%;
